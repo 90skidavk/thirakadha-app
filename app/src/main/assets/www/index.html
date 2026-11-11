@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thirakkatha – Malayalam Script Writer</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1F2B4D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Thirakkatha">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manjari:wght@400;700&family=Noto+Serif+Malayalam:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --desk:#E7EAEE; --page:#FFFFFF; --panel:#F4F5F8; --ink:#1F2B4D; --muted:#69718A;
+  --gold:#B8902F; --gold-soft:#F3E9CF; --line:#D5D9E2; --rec:#C0392B; --ok:#2E7D5B;
+  --ui:"Manjari","Noto Sans Malayalam","Nirmala UI",system-ui,sans-serif;
+  --script:"Noto Serif Malayalam","Manjari","Nirmala UI",serif;
+  --fs:1rem;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark;
+    --desk:#11151D; --page:#1A2030; --panel:#161B27; --ink:#E5E8F0; --muted:#98A0B5;
+    --gold:#D7B45A; --gold-soft:#3A3322; --line:#2C3447; --rec:#E5604F; --ok:#5DBE95; }
+}
+:root[data-theme="dark"]{ color-scheme:dark;
+  --desk:#11151D; --page:#1A2030; --panel:#161B27; --ink:#E5E8F0; --muted:#98A0B5;
+  --gold:#D7B45A; --gold-soft:#3A3322; --line:#2C3447; --rec:#E5604F; --ok:#5DBE95; }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--desk);color:var(--ink);font-family:var(--ui);height:100dvh;overflow:hidden}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,textarea:focus-visible,input:focus-visible,[contenteditable]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+
+#app{display:flex;height:100%}
+#side{width:270px;flex:none;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+#side .brand{padding:16px 16px 12px;border-bottom:4px double var(--gold);display:flex;align-items:baseline;justify-content:space-between}
+#side .brand b{font:700 1.45rem var(--script)}
+#side .brand span{font-size:.75rem;color:var(--muted)}
+#side .scroll{flex:1;overflow-y:auto;padding:8px 10px 16px}
+#side h3{font-size:.8rem;color:var(--muted);margin:14px 6px 6px;font-weight:400}
+.navitem{display:flex;gap:8px;width:100%;text-align:left;border:0;background:none;border-radius:8px;padding:8px 6px;font:.9rem var(--script);line-height:1.4}
+.navitem:hover{background:var(--gold-soft)}
+.navitem i{font-style:normal;color:var(--gold);font-family:var(--ui);min-width:1.4em}
+.navitem small{margin-left:auto;color:var(--muted);font-family:var(--ui)}
+.sidenote{font-size:.82rem;color:var(--muted);padding:4px 6px;line-height:1.5}
+#statMini{border-top:1px solid var(--line);padding:10px 16px;font-size:.8rem;color:var(--muted);display:flex;justify-content:space-between}
+#sideClose,#sideBtn{display:none}
+#scrim{display:none}
+@media (max-width:899px){
+  #side{position:fixed;inset:0 auto 0 0;z-index:15;transform:translateX(-100%);transition:transform .22s;width:min(300px,86vw);box-shadow:0 0 40px rgba(0,0,0,.25)}
+  #app.sideopen #side{transform:none}
+  #app.sideopen #scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:14}
+  #sideBtn{display:grid}
+}
+#work{flex:1;min-width:0;display:flex;flex-direction:column;height:100%}
+
+header{display:flex;align-items:center;gap:6px;padding:10px 12px 6px;padding-top:max(10px,env(safe-area-inset-top))}
+#title{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:700 1.15rem var(--script);padding:6px 4px;text-overflow:ellipsis}
+#title::placeholder{color:var(--muted)}
+.icon{border:1px solid var(--line);background:var(--page);border-radius:10px;height:36px;min-width:36px;padding:0 9px;font-size:.9rem;display:grid;place-items:center;flex:none}
+.icon.solid{background:var(--ink);color:var(--page);border-color:var(--ink);padding:0 14px}
+#saved{font-size:.75rem;color:var(--muted);white-space:nowrap}
+@media (max-width:520px){ #saved{display:none} }
+
+#chips,#selBar{display:flex;gap:6px;overflow-x:auto;padding:2px 12px 6px;scrollbar-width:none;align-items:center}
+#chips::-webkit-scrollbar,#selBar::-webkit-scrollbar,#cands::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--page);border-radius:999px;padding:6px 12px;font-size:.85rem;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.chip.danger{border-color:var(--rec);color:var(--rec);background:transparent}
+.chip.gold{border-color:var(--gold);color:var(--gold);background:transparent}
+#chipHint{flex:none;font-size:.75rem;color:var(--muted);padding-right:2px}
+
+main{flex:1;overflow-y:auto;padding:4px 10px 16px;-webkit-overflow-scrolling:touch}
+.page{max-width:700px;margin:0 auto;background:var(--page);min-height:100%;
+  border-top:7px double var(--gold);border-bottom:7px double var(--gold);
+  padding:30px 26px 60px;font-family:var(--script);font-size:var(--fs);line-height:1.75;counter-reset:scene}
+.empty{color:var(--muted);font-family:var(--ui);text-align:center;padding:40px 10px;line-height:1.7;font-size:.95rem}
+.empty b{color:var(--ink)}
+.blk{outline:none;border-radius:4px;padding:1px 4px;margin:0 -4px;white-space:pre-wrap;word-break:break-word;scroll-margin:80px}
+.blk.sel{background:var(--gold-soft)}
+.blk.hit{box-shadow:inset 3px 0 0 var(--gold)}
+.blk.reading{box-shadow:inset 3px 0 0 var(--ok)}
+.blk.scene{font-weight:700;margin-top:1.6em;counter-increment:scene}
+.blk.scene::before{content:counter(scene) ". ";color:var(--gold)}
+.blk.action{margin-top:.8em}
+.blk.character{margin:1em 0 0 36%;font-weight:600}
+.blk.paren{margin-left:26%;margin-right:20%;color:var(--muted)}
+.blk.dialogue{margin-left:16%;margin-right:12%}
+.blk.transition{text-align:right;margin-top:1em;font-weight:600}
+.blk.pending{opacity:.55;background:linear-gradient(90deg,transparent,var(--gold-soft),transparent);background-size:200% 100%;animation:shim 1.2s linear infinite}
+@keyframes shim{to{background-position:-200% 0}}
+.page.two .blk.action{margin-right:50%}
+.page.two .blk.character{margin:1em 0 0 52%}
+.page.two .blk.paren,.page.two .blk.dialogue{margin-left:52%;margin-right:0}
+.here{display:flex;align-items:center;gap:8px;margin:6px 0;font:.75rem var(--ui);color:var(--gold);cursor:pointer}
+.here::before,.here::after{content:"";flex:1;border-top:1px dashed var(--gold)}
+#printTitle{display:none}
+@media (max-width:480px){
+  .page{padding:22px 14px 44px}
+  .blk.character{margin-left:28%} .blk.paren{margin-left:18%;margin-right:8%} .blk.dialogue{margin-left:9%;margin-right:4%}
+}
+
+#findBar{background:var(--panel);border-top:1px solid var(--line);padding:8px 10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#findBar input{flex:1;min-width:120px;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--page);color:var(--ink);font:.9rem var(--ui);padding:0 10px}
+#findInfo{font-size:.78rem;color:var(--muted);width:100%}
+
+#composer{background:var(--page);border-top:1px solid var(--line);padding:6px 10px 8px;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+#cands{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0 6px;min-height:40px;align-items:center}
+.cand{flex:none;border:1px solid var(--line);background:var(--desk);border-radius:8px;padding:5px 11px;font:1rem var(--script);white-space:nowrap}
+.cand.on{border-color:var(--gold);background:var(--gold-soft)}
+.cand.eng{font-family:var(--ui);font-size:.85rem;color:var(--muted)}
+.candHint{font-size:.78rem;color:var(--muted);flex:none}
+#preview{min-height:1.7em;font-family:var(--script);font-size:1.05rem;padding:0 4px 6px;word-break:break-word;line-height:1.6}
+#preview .lbl{font-family:var(--ui);font-size:.72rem;color:var(--page);background:var(--ink);border-radius:5px;padding:2px 7px;margin-right:8px;vertical-align:middle}
+#preview .w{border-bottom:1px dotted transparent;cursor:pointer}
+#preview .w.unsure{border-bottom-color:var(--gold)}
+#preview .w.on{background:var(--gold-soft);border-radius:3px}
+#preview.listening{color:var(--rec)}
+.row{display:flex;gap:8px;align-items:flex-end}
+#inp{flex:1;resize:none;border:1px solid var(--line);border-radius:12px;background:var(--desk);color:var(--ink);font:1rem var(--ui);padding:10px 12px;max-height:120px;min-height:44px}
+#mic,#add{flex:none;width:44px;height:44px;border-radius:50%;border:0;display:grid;place-items:center}
+#mic{background:var(--desk);border:1px solid var(--line)}
+#mic.on{background:var(--rec);color:#fff;border-color:var(--rec);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--rec) 25%,transparent)}}
+#add{background:var(--ink);color:var(--page)}
+.opts{display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:.78rem;color:var(--muted);gap:8px}
+.tog{display:flex;align-items:center;gap:6px;background:none;border:0;padding:4px 0;font-size:.78rem;color:var(--muted)}
+.tog .sw{width:30px;height:18px;border-radius:9px;background:var(--line);position:relative;transition:background .2s;flex:none}
+.tog .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--page);transition:left .2s}
+.tog[aria-checked="true"] .sw{background:var(--gold)}
+.tog[aria-checked="true"] .sw::after{left:14px}
+
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.sheet.open{display:flex}
+.sheet .box{background:var(--page);color:var(--ink);width:100%;max-width:560px;max-height:88dvh;overflow-y:auto;border-radius:16px 16px 0 0;padding:18px 18px 28px;border-top:6px double var(--gold)}
+@media (min-width:700px){ .sheet{align-items:center} .sheet .box{border-radius:16px} }
+.box h2{margin:0 0 10px;font-size:1.1rem}
+.box h3{margin:18px 0 6px;font-size:.92rem}
+.box p,.box li{font-size:.9rem;line-height:1.55}
+.keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:4px 10px;font-size:.88rem}
+.keys span b{color:var(--gold);margin-right:4px}
+.menu button.item{display:flex;justify-content:space-between;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:13px 4px;font-size:.95rem}
+.menu button.item small{color:var(--muted)}
+.seg{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 0}
+.seg label{font-size:.85rem;color:var(--muted);min-width:76px}
+.note{font-size:.82rem;color:var(--muted);margin:8px 0 12px}
+.field{width:100%;min-height:44px;border:1px solid var(--line);border-radius:12px;background:var(--desk);color:var(--ink);font:.95rem var(--ui);padding:10px 12px;margin-top:6px}
+.list button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:12px 4px;font:.95rem var(--script)}
+.list small{display:block;color:var(--muted);font:.78rem var(--ui)}
+.lrow{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+.lrow button:first-child{flex:1;border:0}
+.lrow .chip{margin-left:6px}
+.big{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;margin-top:8px;border:1px solid var(--line);border-radius:12px;background:var(--desk);font-size:.95rem}
+.big.primary{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.stats div{background:var(--desk);border-radius:10px;padding:10px;text-align:center}
+.stats b{display:block;font-size:1.3rem}
+.stats span{font-size:.75rem;color:var(--muted)}
+.bar{height:6px;background:var(--gold);border-radius:3px;margin-top:4px}
+#aiOut{background:var(--desk);border-radius:10px;padding:12px;margin-top:10px;font:1rem/1.7 var(--script);white-space:pre-wrap}
+#aiOut .t{font:.75rem var(--ui);color:var(--muted);display:block}
+#toast{position:fixed;left:50%;bottom:170px;transform:translateX(-50%);background:var(--ink);color:var(--page);padding:10px 16px;border-radius:10px;font-size:.88rem;max-width:90%;text-align:center;opacity:0;pointer-events:none;transition:opacity .25s;z-index:30}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{
+  #side,header,#chips,#selBar,#composer,#findBar,.sheet,#toast,.here,#scrim{display:none!important}
+  body{background:#fff;height:auto;overflow:visible} #app,#work{display:block;height:auto} main{overflow:visible;padding:0}
+  .page{border:0;color:#000;background:#fff;max-width:none;font-size:12pt}
+  .blk.sel,.blk.hit{background:none;box-shadow:none}
+  #printTitle{display:flex;flex-direction:column;justify-content:center;align-items:center;height:92vh;page-break-after:always;text-align:center}
+  #printTitle h1{font-size:26pt;margin:0 0 20pt} #printTitle p{margin:4pt 0}
+  .blk.scene{page-break-after:avoid} .blk.character{page-break-after:avoid}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<aside id="side" aria-label="Scenes and characters">
+  <div class="brand"><b>തിരക്കഥ</b><span>Thirakkatha</span></div>
+  <div class="scroll">
+    <h3>Scenes</h3><div id="sceneNav"></div>
+    <h3>Characters</h3><div id="charNav"></div>
+  </div>
+  <div id="statMini"></div>
+</aside>
+<div id="scrim"></div>
+
+<div id="work">
+<header>
+  <button class="icon" id="sideBtn" aria-label="Scenes and characters">☰</button>
+  <input id="title" placeholder="Untitled script" autocomplete="off" aria-label="Script title">
+  <span id="saved"></span>
+  <button class="icon" id="undoBtn" aria-label="Undo" disabled>↶</button>
+  <button class="icon" id="redoBtn" aria-label="Redo" disabled>↷</button>
+  <button class="icon solid" id="saveBtn">Save</button>
+  <button class="icon" id="menuBtn" aria-label="More tools">⋯</button>
+</header>
+
+<nav id="chips" aria-label="Line type"><span id="chipHint">Next line:</span></nav>
+<div id="selBar" hidden></div>
+
+<main id="main"><div class="page" id="page"><div class="empty">Opening your script…</div></div></main>
+
+<div id="findBar" hidden>
+  <input id="findInp" placeholder="Find (Manglish or മലയാളം)" autocapitalize="off" autocomplete="off" spellcheck="false">
+  <input id="replInp" placeholder="Replace with" autocapitalize="off" autocomplete="off" spellcheck="false">
+  <button class="chip" id="findNext">Find next</button>
+  <button class="chip" id="replAll">Replace all</button>
+  <button class="chip" id="findClose" aria-label="Close find">Close</button>
+  <span id="findInfo"></span>
+</div>
+
+<div id="composer">
+  <div id="cands" aria-label="Suggestions"></div>
+  <div id="preview"></div>
+  <div class="row">
+    <textarea id="inp" rows="1" placeholder="Type in Manglish… e.g. avan veettilekku varunnu" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" aria-label="Type in Manglish"></textarea>
+    <button id="mic" aria-label="Start voice typing">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+    <button id="add" aria-label="Add line">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+  <div class="opts">
+    <button class="tog" id="aiTog" role="switch" aria-checked="true"><span class="sw"></span>AI polish &amp; voice formatting</button>
+    <span><b>name: line</b> = dialogue</span>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- Typing guide -->
+<div class="sheet" id="helpSheet"><div class="box">
+  <h2>Typing guide</h2>
+  <p>Type Malayalam the way you'd text it in English letters, then press Enter. Type casually: <b>njan veettil pokunnu</b>, <b>ammayude kayyil</b>, <b>santhoshamayi</b> all come out right.</p>
+  <h3>When a word comes out wrong</h3>
+  <ul>
+    <li>Other spellings appear above the typing box. Tap the right one.</li>
+    <li>The app remembers your choice and uses it every time after that.</li>
+    <li>Tap any word in the preview to fix that word. Words with a gold dotted line are best guesses.</li>
+    <li>With AI polish on, guessed words are corrected for you after you press Enter, and the app learns from the corrections.</li>
+  </ul>
+  <h3>Shortcuts</h3>
+  <ul>
+    <li><b>raju: nee evide poyi?</b> makes a character and their dialogue in one go.</li>
+    <li><b>ALL CAPS</b> stays in English: INT. EXT. CUT TO:</li>
+    <li><b>{English}</b> keeps anything in English.</li>
+    <li>On a keyboard: <b>Tab</b> changes the line type, <b>Ctrl+Z</b> undo, <b>Ctrl+S</b> save, <b>Ctrl+F</b> find.</li>
+  </ul>
+  <h3>Voice typing</h3>
+  <p>Tap the mic and speak Malayalam. With AI on, speech is sorted into scene, action and dialogue. Without AI, start with <b>സീൻ</b>, <b>ആക്ഷൻ</b>, <b>ഡയലോഗ്</b>, <b>കട്ട് ടു</b> or <b>രാജു പറയുന്നു…</b></p>
+  <h3>Exact keys</h3>
+  <p class="note">Capital letters always give one exact letter, for when you want full control.</p>
+  <div class="keys" id="keyGrid"></div>
+  <button class="big" data-close>Got it</button>
+</div></div>
+
+<!-- More tools -->
+<div class="sheet" id="menuSheet"><div class="box menu">
+  <h2>Tools</h2>
+  <button class="item" id="libBtn">My scripts<small id="libCount"></small></button>
+  <button class="item" id="detailsBtn">Title page details</button>
+  <button class="item" id="findBtn">Find and replace</button>
+  <button class="item" id="statsBtn">Script statistics</button>
+  <button class="item" id="aiBtn">AI writing tools</button>
+  <button class="item" id="readBtn">Read script aloud</button>
+  <button class="item" id="printBtn">Print or save as PDF</button>
+  <button class="item" id="copyBtn">Copy script text</button>
+  <button class="item" id="installBtn" hidden>Install as an app</button>
+  <button class="item" id="helpBtn">Typing guide</button>
+  <h3>View</h3>
+  <div class="seg"><label>Layout</label>
+    <button class="chip" data-layout="std">Standard</button><button class="chip" data-layout="two">Two-column</button></div>
+  <div class="seg"><label>Text size</label>
+    <button class="chip" id="fsDown" aria-label="Smaller text">A−</button><button class="chip" id="fsUp" aria-label="Larger text">A+</button></div>
+  <div class="seg"><label>Theme</label>
+    <button class="chip" data-theme-set="auto">Auto</button><button class="chip" data-theme-set="light">Light</button><button class="chip" data-theme-set="dark">Dark</button></div>
+  <button class="big" data-close>Close</button>
+</div></div>
+
+<!-- Library -->
+<div class="sheet" id="libSheet"><div class="box">
+  <h2>My scripts</h2>
+  <div class="list" id="libList"></div>
+  <button class="big primary" id="newBtn">Start a new script</button>
+  <button class="big" data-close>Close</button>
+</div></div>
+
+<!-- Title page -->
+<div class="sheet" id="detailsSheet"><div class="box">
+  <h2>Title page details</h2>
+  <p class="note">Shown on the first page when you print, save as PDF, or export.</p>
+  <input class="field" id="authorInp" placeholder="Written by" autocomplete="off">
+  <input class="field" id="contactInp" placeholder="Phone, email or draft note" autocomplete="off">
+  <button class="big primary" data-close>Done</button>
+</div></div>
+
+<!-- Stats -->
+<div class="sheet" id="statsSheet"><div class="box">
+  <h2>Script statistics</h2>
+  <div id="statsBody"></div>
+  <button class="big" data-close>Close</button>
+</div></div>
+
+<!-- AI tools -->
+<div class="sheet" id="aiSheet"><div class="box">
+  <h2>AI writing tools</h2>
+  <p class="note" id="aiTarget"></p>
+  <div class="seg" id="aiActs">
+    <button class="chip" data-ai="natural">More natural</button>
+    <button class="chip" data-ai="short">Shorter</button>
+    <button class="chip" data-ai="emotional">More emotional</button>
+    <button class="chip" data-ai="funny">Add humour</button>
+    <button class="chip" data-ai="english">English translation</button>
+  </div>
+  <button class="big" id="aiNext">Suggest what happens next</button>
+  <button class="big" id="aiSummary">Summarise the script so far</button>
+  <div id="aiOut" hidden></div>
+  <div class="seg" id="aiUse" hidden>
+    <button class="chip gold" id="aiApply">Use this</button>
+    <button class="chip" id="aiCopy">Copy</button>
+  </div>
+  <button class="big" data-close>Close</button>
+</div></div>
+
+<!-- Save -->
+<div class="sheet" id="saveSheet"><div class="box">
+  <h2>Save your script</h2>
+  <p class="note" style="margin-top:0">Choose a format</p>
+  <div class="seg" id="fmtRow" role="radiogroup" aria-label="File format" style="padding-top:0">
+    <button class="chip" data-fmt="script">Script file</button>
+    <button class="chip" data-fmt="doc">Word</button>
+    <button class="chip" data-fmt="fountain">Fountain</button>
+    <button class="chip" data-fmt="txt">Text</button>
+  </div>
+  <p id="fmtNote" class="note"></p>
+  <button class="big primary" id="saveDevice">Save to this device</button>
+  <button class="big" id="saveDrive">
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#0F9D58" d="M8 3h8l7 12h-8z"/><path fill="#FFC107" d="M1 15 8 3l4 7-4 7z"/><path fill="#4285F4" d="M5 21l3.5-6H23l-3.5 6z"/></svg>
+    <span>Save to Google Drive</span>
+  </button>
+  <h3>Open a saved script</h3>
+  <button class="big" id="openBtn">Open script file from device</button>
+  <button class="big" id="openDrive" hidden>Open from Google Drive</button>
+  <div class="list" id="driveList"></div>
+  <input type="file" id="openFile" accept=".mlscript,.json,application/json" hidden>
+  <h3>Google Drive connection</h3>
+  <p class="note" id="driveStatus"></p>
+  <div id="driveSetup">
+    <input id="clientIdInp" class="field" placeholder="Paste your Google OAuth Client ID" autocomplete="off" spellcheck="false" autocapitalize="off">
+    <button class="big" id="clientIdSave">Connect Google Drive</button>
+  </div>
+  <button class="big" id="driveDisconnect" hidden>Disconnect Google Drive</button>
+  <button class="big" data-close>Close</button>
+</div></div>
+
+<div id="toast" role="status"></div>
+
+<script>
+/* ---------- Your Google Drive setup ----------
+   Paste your OAuth Client ID between the quotes to connect Drive for everyone
+   using this page, or leave it empty and paste it in the app's Save screen. */
+const GOOGLE_CLIENT_ID = "";
+
+/* =====================================================================
+   MANGLISH ENGINE
+   1. Words you have corrected before (learned)
+   2. Built-in dictionary of common words
+   3. Context rules for casual spelling (evide, veedu, paranju, kuttikal…)
+   Capital letters stay exact: T ട, D ഡ, N ണ, L ള, R റ, S ഷ, A ആ, I ഈ, U ഊ, E ഏ, O ഓ
+   ===================================================================== */
+const VSIGN={a:["","അ"],aa:["ാ","ആ"],i:["ി","ഇ"],ii:["ീ","ഈ"],u:["ു","ഉ"],uu:["ൂ","ഊ"],e:["െ","എ"],ee:["േ","ഏ"],
+  ai:["ൈ","ഐ"],o:["ൊ","ഒ"],oo:["ോ","ഓ"],au:["ൗ","ഔ"],vir:["്","ഉ"]};
+const VKEY={aa:1,ai:1,au:1,ou:1,ee:1,ii:1,oo:1,uu:1,ae:1,A:1,I:1,U:1,E:1,O:1,a:1,i:1,u:1,e:1,o:1};
+const CKEY={};
+("thth chch ksh nth ndh nch tth cch chh kh gh ng nk ch jh nj th dh ph bh sh zh nt nd tt mb ck ll nn dd Th Dh Sh "+
+ "k g c q j t d n p f b m y r l v w s h x z T D N L R S").split(" ").forEach(k=>CKEY[k]=1);
+const CHILLU={"ന":"ൻ","ണ":"ൺ","ര":"ർ","റ":"ർ","ല":"ൽ","ള":"ൾ","മ":"ം"};
+const SOLO=new Set(["ർ","ൽ","ൾ","ൻ","ൺ","ം"]);
+
+function tokenize(w){
+  const t=[]; let i=0;
+  while(i<w.length){
+    if(w[i]==="~"){ t.push({t:"X"}); i++; continue; }
+    let m=null;
+    for(const L of [4,3,2,1]){ const s=w.substr(i,L); if(s.length===L&&CKEY[s]){ m=s; break; } }
+    if(m){ t.push({t:"C",k:m}); i+=m.length; continue; }
+    for(const L of [2,1]){ const s=w.substr(i,L); if(s.length===L&&VKEY[s]){ m=s; break; } }
+    if(m){ t.push({t:"V",k:m}); i+=m.length; continue; }
+    t.push({t:"O",k:w[i]}); i++;
+  }
+  return t;
+}
+const U_KEEP=new Set(["j","nn","ch","nj","nd","tt","tth","thth","cch","chch","nt","nth","ndh","nch"]);
+function options(tk,i){
+  const x=tk[i], p=tk[i-1], n=tk[i+1], k=x.k;
+  const first=i===0, last=i===tk.length-1;
+  const pV=!!p&&p.t==="V", nV=!!n&&n.t==="V", nC=!!n&&n.t==="C", mid=pV&&nV;
+  if(x.t==="V"){
+    switch(k){
+      case "aa": case "A": return ["aa"];
+      case "ee": case "ii": case "I": return ["ii"];
+      case "uu": case "U": return ["uu"];
+      case "oo": return ["uu","oo"];
+      case "ae": case "E": return ["ee"];
+      case "O": return ["oo"];
+      case "ai": return ["ai"];
+      case "au": case "ou": return ["au"];
+      case "a": {
+        const rest=tk.slice(i+1).map(z=>z.k).join(""), pk=p&&p.t==="C"?p.k:"", pp=tk[i-2]&&tk[i-2].t==="C"?tk[i-2].k:"";
+        if(i>0 && rest==="yi") return ["aa","a"];                                   // …ayi → ആയി
+        if(rest==="m" && ((pk==="k"&&pp==="k")||(pk==="y"&&pp==="y"))) return ["aa","a"]; // pokkam, cheyyam → ാം
+        return ["a","aa"]; }
+      case "i": return ["i","ii"];
+      case "e": return i>0 && tk.slice(i+1).map(z=>z.k).join("")==="kku" ? ["ee","e"] : ["e","ee"]; // …ekku → േക്ക്
+      case "o": return last&&p&&p.t==="C" ? ["oo","o"] : ["o","oo"];
+      case "u":
+        if(!(last&&p&&p.t==="C")) return ["u","uu"];
+        if(p.k==="y") return ["uu","u","vir"];
+        if(p.k==="th"){ const b=tk[i-2]; return b&&b.t==="V"&&/^(a|i|e|aa|A|E|ee)$/.test(b.k) ? ["vir","u","uu"] : ["u","vir","uu"]; }
+        return U_KEEP.has(p.k) ? ["u","vir","uu"] : ["vir","u","uu"];
+    }
+  }
+  switch(k){
+    case "d": return last?["ഡ","ദ"] : mid?["ട","ദ","ഡ"] : ["ദ","ഡ","ട"];
+    case "t": return last?["റ്റ","ട്ട","ട"] : mid?["ട","റ്റ","ത"] : ["ട","ത"];
+    case "tt": return ["ട്ട","റ്റ","ത്ത"];
+    case "th": {
+      const rest=tk.slice(i+1).map(z=>z.k).join("");
+      if(p&&p.t==="C"&&p.k==="r") return ["ത്ത","ത","ഥ"];                           // nirthi, orthu
+      if(i>=3&&pV&&p.k==="a"&&/^(il|inte|inu|e|ekku|ilekku|ile|ode|odu|ilum|inum|ine)$/.test(rest)) return ["ത്ത","ത"]; // ambalathil
+      return ["ത","ത്ത","ഥ"]; }
+    case "tth": case "thth": return ["ത്ത"];
+    case "dh": return ["ധ","ദ","ദ്ധ"];
+    case "dd": return ["ദ്ദ","ഡ്ഡ"];
+    case "l": if(pV&&nC&&!/^(l|ll|y|v|w|p|L)$/.test(n.k)) return ["ൽ","ൾ","ല","ള"]; return ["ല","ള"];
+    case "ll": return ["ല്ല","ള്ള"];
+    case "n": return ["ന","ണ"];
+    case "nn": return ["ന്ന","ണ്ണ"];
+    case "nd": return ["ണ്ട","ന്ദ","ൻഡ"];
+    case "nt": return ["ന്റ","ണ്ട","ന്ത"];
+    case "nth": return ["ന്ത","ന്ഥ"];
+    case "ndh": return ["ന്ധ","ന്ദ"];
+    case "ng": return ["ങ്ങ","ംഗ","ങ"];
+    case "nk": return ["ങ്ക"];
+    case "nj": return first||!pV ? ["ഞ","ഞ്ഞ"] : ["ഞ്ഞ","ഞ്ച","ഞ"];
+    case "nch": return ["ഞ്ച"];
+    case "r": if(pV&&nC&&!/^(y|r)$/.test(n.k)) return ["ർ","ര","റ"]; return last&&pV?["ര"]:["ര","റ"];
+    case "ch": return mid?["ച്ച","ച","ഛ"]:["ച","ഛ"];
+    case "cch": case "chch": return ["ച്ച"];
+    case "chh": return ["ഛ","ച്ഛ"];
+    case "sh": return first?["ശ","ഷ"]:["ഷ","ശ"];
+    case "m": if(pV&&nC&&!/^(m|p|b|y|r|l|n|mb|ph|bh)$/.test(n.k)) return ["ം","മ"]; return ["മ"];
+    case "mb": return ["മ്പ","ംബ"];
+    case "k": return last&&pV?["ക്ക","ക"]:["ക"];
+    case "p": return last&&pV?["പ്പ","പ"]:["പ"];
+    case "c": return ["ക","സ"];
+    case "ck": return ["ക്ക"];
+    case "s": return ["സ"]; case "z": return ["സ"]; case "x": return ["ക്സ"]; case "q": return ["ക"];
+    case "kh": return ["ഖ"]; case "g": return ["ഗ"]; case "gh": return ["ഘ"]; case "j": return ["ജ"]; case "jh": return ["ഝ"];
+    case "ph": case "f": return ["ഫ"]; case "b": return ["ബ"]; case "bh": return ["ഭ"];
+    case "y": return ["യ"]; case "v": case "w": return ["വ"]; case "h": return ["ഹ"]; case "zh": return ["ഴ"];
+    case "ksh": return ["ക്ഷ"];
+    case "T": return ["ട"]; case "D": return ["ഡ"]; case "N": return ["ണ"]; case "L": return ["ള"]; case "R": return ["റ"];
+    case "S": case "Sh": return ["ഷ"]; case "Th": return ["ഠ"]; case "Dh": return ["ഢ"];
+  }
+  return [k];
+}
+function assemble(tk,pick){
+  let out="", pend=false, lastVal="", joined=false;
+  for(let i=0;i<tk.length;i++){
+    const x=tk[i], v=pick[i];
+    if(x.t==="X"){ if(pend){ out+="്"; pend=false; } continue; }
+    if(x.t==="O"){ if(pend){ out+="്"; pend=false; } out+=x.k; continue; }
+    if(x.t==="C"){
+      joined=pend; if(pend) out+="്";
+      out+=v; lastVal=v; pend=!SOLO.has(v);
+    } else {
+      out+= pend ? VSIGN[v][0] : VSIGN[v][1]; pend=false;
+    }
+  }
+  if(pend){ const c=CHILLU[lastVal]; if(c&&!joined) out=out.slice(0,-1)+c; else out+="്"; }
+  return out;
+}
+/* All spellings the rules can produce for one word, best guess first */
+function ruleCands(w){
+  const tk=tokenize(w); if(!tk.length) return [w];
+  const opts=tk.map((x,i)=>x.t==="C"||x.t==="V"?options(tk,i):[null]);
+  const base=opts.map(o=>o[0]);
+  const res=[assemble(tk,base)];
+  const amb=[]; opts.forEach((o,i)=>{ if(o.length>1) amb.push(i); });
+  // first-syllable vowel first (length is the commonest slip), then consonants, then other vowels
+  const fv=tk.findIndex(x=>x.t==="V");
+  amb.sort((a,b)=>rank(a)-rank(b));
+  function rank(i){ return i===fv?0 : tk[i].t==="C"?1 : i===tk.length-1?1.5 : 2; }
+  const singles=[];
+  for(const i of amb) for(let j=1;j<opts[i].length;j++){ const p=base.slice(); p[i]=opts[i][j]; singles.push(p); }
+  singles.forEach(p=>res.push(assemble(tk,p)));
+  if(amb.length<=6){
+    for(let a=0;a<amb.length&&res.length<40;a++) for(let b=a+1;b<amb.length&&res.length<40;b++){
+      const p=base.slice(); p[amb[a]]=opts[amb[a]][1]; p[amb[b]]=opts[amb[b]][1]; res.push(assemble(tk,p));
+    }
+  }
+  return [...new Set(res)];
+}
+const normKey=w=>w.toLowerCase().replace(/aa/g,"a").replace(/ee|ii/g,"i").replace(/oo|uu/g,"u");
+
+/* ---- Built-in dictionary: casual spelling → Malayalam (first entry is the commonest) ---- */
+const DICT_SRC=`
+njan ഞാൻ|nee നീ|avan അവൻ|aval അവൾ|avar അവർ|athu അത്|ithu ഇത്|ivan ഇവൻ|ival ഇവൾ|ivar ഇവർ
+njangal ഞങ്ങൾ|nammal നമ്മൾ|ningal നിങ്ങൾ|thaan താൻ|thangal താങ്കൾ
+ente എന്റെ|ninte നിന്റെ|avante അവന്റെ|avalude അവളുടെ|avarude അവരുടെ|njangalude ഞങ്ങളുടെ|nammude നമ്മുടെ|ningalude നിങ്ങളുടെ|athinte അതിന്റെ|ithinte ഇതിന്റെ
+enikku എനിക്ക്|enik എനിക്ക്|ninakku നിനക്ക്|avanu അവന്|avalkku അവൾക്ക്|avarkku അവർക്ക്|namukku നമുക്ക്|njangalkku ഞങ്ങൾക്ക്|ningalkku നിങ്ങൾക്ക്
+enne എന്നെ|ninne നിന്നെ|avane അവനെ|avale അവളെ|avare അവരെ|nammale നമ്മളെ|ennodu എന്നോട്|ninnodu നിന്നോട്|avanodu അവനോട്|avalodu അവളോട്
+aaru ആര്,ആറ്|aara ആരാ|aarkku ആർക്ക്|aarude ആരുടെ|aarum ആരും
+enthu എന്ത്|entha എന്താ|enthanu എന്താണ്|enthina എന്തിനാ|enthinu എന്തിന്|enthokke എന്തൊക്കെ
+evide എവിടെ|ivide ഇവിടെ|avide അവിടെ|eppol എപ്പോൾ|ippol ഇപ്പോൾ|appol അപ്പോൾ|engane എങ്ങനെ|ingane ഇങ്ങനെ|angane അങ്ങനെ
+ethra എത്ര|ithra ഇത്ര|athra അത്ര|ethu ഏത്|ee ഈ|aa ആ
+oru ഒരു|onnu ഒന്ന്|randu രണ്ട്|moonnu മൂന്ന്|naalu നാല്|anju അഞ്ച്|ezhu ഏഴ്|ettu എട്ട്|onpathu ഒൻപത്|pathu പത്ത്|nooru നൂറ്|aayiram ആയിരം
+aanu ആണ്|aan ആണ്|alla അല്ല|alle അല്ലേ|allo അല്ലോ|illa ഇല്ല|ille ഇല്ലേ|undu ഉണ്ട്|und ഉണ്ട്|undo ഉണ്ടോ|aano ആണോ|aayi ആയി|aayirunnu ആയിരുന്നു|aakum ആകും|aayirikkum ആയിരിക്കും
+venam വേണം|venda വേണ്ട|veno വേണോ|vendi വേണ്ടി|mathi മതി|pattum പറ്റും|pattilla പറ്റില്ല|ariyam അറിയാം|ariyilla അറിയില്ല|ariyo അറിയോ
+sheri ശരി|shari ശരി|athe അതെ|pakshe പക്ഷേ|pinne പിന്നെ|ennal എന്നാൽ|ennalum എന്നാലും|enkil എങ്കിൽ|ennu എന്ന്|enna എന്ന|ennum എന്നും
+koodi കൂടി|koode കൂടെ|thanne തന്നെ|mathram മാത്രം|ellam എല്ലാം|ellavarum എല്ലാവരും|ella എല്ലാ|onnum ഒന്നും|okke ഒക്കെ|ok ഓക്കെ
+ippozhum ഇപ്പോഴും|eppozhum എപ്പോഴും|innu ഇന്ന്|innale ഇന്നലെ|naale നാളെ|ravile രാവിലെ|raathri രാത്രി|uchakku ഉച്ചയ്ക്ക്|vaikunneram വൈകുന്നേരം|pakal പകൽ
+divasam ദിവസം|samayam സമയം|neram നേരം|varsham വർഷം|maasam മാസം|kaalam കാലം
+varu വരൂ|vaa വാ|varam വരാം|varum വരും|vannu വന്നു|varunnu വരുന്നു|varilla വരില്ല|vanno വന്നോ
+po പോ|poyi പോയി|pokam പോകാം|pokum പോകും|pokunnu പോകുന്നു|poda പോടാ|podi പോടി|povam പോവാം
+paranju പറഞ്ഞു|parayu പറയൂ|parayam പറയാം|parayunnu പറയുന്നു|para പറ|paranjathu പറഞ്ഞത്
+kandu കണ്ടു|kaanam കാണാം|kanunnu കാണുന്നു|kaanunnu കാണുന്നു|nokku നോക്ക്|nokki നോക്കി|nokkunnu നോക്കുന്നു
+cheythu ചെയ്തു|cheyyam ചെയ്യാം|cheyyunnu ചെയ്യുന്നു|cheyyu ചെയ്യൂ|kazhichu കഴിച്ചു|kazhinju കഴിഞ്ഞു|kazhikkunnu കഴിക്കുന്നു
+irunnu ഇരുന്നു|irikku ഇരിക്കൂ|irikkunnu ഇരിക്കുന്നു|nilkku നിൽക്കൂ|nilkkunnu നിൽക്കുന്നു|ninnu നിന്നു
+nadakkunnu നടക്കുന്നു|nadannu നടന്നു|odunnu ഓടുന്നു|odi ഓടി|chirikkunnu ചിരിക്കുന്നു|chirichu ചിരിച്ചു|karayunnu കരയുന്നു|karanju കരഞ്ഞു
+vilichu വിളിച്ചു|vilikkunnu വിളിക്കുന്നു|thurannu തുറന്നു|thurakkunnu തുറക്കുന്നു|adachu അടച്ചു|adakkunnu അടയ്ക്കുന്നു
+eduthu എടുത്തു|edukkunnu എടുക്കുന്നു|koduthu കൊടുത്തു|kodukkunnu കൊടുക്കുന്നു|kittum കിട്ടും|kitti കിട്ടി|thannu തന്നു|tharam തരാം|tharu തരൂ
+ketto കേട്ടോ|kettu കേട്ടു|kelkkunnu കേൾക്കുന്നു|chodichu ചോദിച്ചു|chodikkunnu ചോദിക്കുന്നു|thonnunnu തോന്നുന്നു|thonni തോന്നി|marannu മറന്നു
+urangi ഉറങ്ങി|urangunnu ഉറങ്ങുന്നു|ezhuthi എഴുതി|ezhuthunnu എഴുതുന്നു|vayikkunnu വായിക്കുന്നു|thirinju തിരിഞ്ഞു|veenu വീണു|veezhunnu വീഴുന്നു
+pedi പേടി|pedichu പേടിച്ചു|ishtam ഇഷ്ടം|ishtamanu ഇഷ്ടമാണ്|snehikkunnu സ്നേഹിക്കുന്നു|kondu കൊണ്ട്|pandu പണ്ട്
+amma അമ്മ|achan അച്ഛൻ|chettan ചേട്ടൻ|chetta ചേട്ടാ|chechi ചേച്ചി|aniyan അനിയൻ|aniyathi അനിയത്തി|makan മകൻ|makal മകൾ|mon മോൻ|mol മോൾ|mone മോനേ|mole മോളേ
+kutti കുട്ടി|kuttikal കുട്ടികൾ|kunju കുഞ്ഞ്|bharya ഭാര്യ|bharthavu ഭർത്താവ്|koottukaran കൂട്ടുകാരൻ|suhruthu സുഹൃത്ത്|sir സാർ|saar സാർ|eda എടാ|edi എടീ|da ഡാ|di ഡീ
+veedu വീട്|veettil വീട്ടിൽ|veetil വീട്ടിൽ|muri മുറി|vathil വാതിൽ|janal ജനൽ|road റോഡ്|vazhi വഴി|kada കട|school സ്കൂൾ|office ഓഫീസ്|car കാർ|bus ബസ്|phone ഫോൺ|police പോലീസ്|doctor ഡോക്ടർ|ashupathri ആശുപത്രി
+pani പണി,പനി|joli ജോലി|panam പണം|paisa പൈസ|peru പേര്|karyam കാര്യം|katha കഥ|cinema സിനിമ|padam പടം|pattu പാട്ട്
+sneham സ്നേഹം|santhosham സന്തോഷം|sankadam സങ്കടം|deshyam ദേഷ്യം|bhayam ഭയം|jeevitham ജീവിതം|maranam മരണം|lokam ലോകം|naadu നാട്|keralam കേരളം|malayalam മലയാളം
+manushyan മനുഷ്യൻ|aalu ആള്|aal ആൾ|aalukal ആളുകൾ|pennu പെണ്ണ്|kannu കണ്ണ്|kannukal കണ്ണുകൾ|kai കൈ|kaal കാൽ|mukham മുഖം|thala തല|manassu മനസ്സ്|manasil മനസ്സിൽ|hridayam ഹൃദയം
+vellam വെള്ളം|chaya ചായ|choru ചോറ്|bhakshanam ഭക്ഷണം|mazha മഴ|veyil വെയിൽ|kaattu കാറ്റ്|kadal കടൽ|puzha പുഴ|maram മരം|poo പൂ|aakasham ആകാശം|sooryan സൂര്യൻ|chandran ചന്ദ്രൻ
+velicham വെളിച്ചം|iruttu ഇരുട്ട്|shabdam ശബ്ദം|daivam ദൈവം|ambalam അമ്പലം|palli പള്ളി|sathyam സത്യം|nuna നുണ|thettu തെറ്റ്|prashnam പ്രശ്നം|sahayam സഹായം|nanni നന്ദി|namaskaram നമസ്കാരം
+nalla നല്ല|nannayi നന്നായി|valiya വലിയ|cheriya ചെറിയ|puthiya പുതിയ|pazhaya പഴയ|kure കുറേ|kurachu കുറച്ച്|valare വളരെ|othiri ഒത്തിരി|orupadu ഒരുപാട്
+vegam വേഗം|pathukke പതുക്കെ|mele മേലെ|thazhe താഴെ|akathu അകത്ത്|purathu പുറത്ത്|munnil മുന്നിൽ|pinnil പിന്നിൽ|aduthu അടുത്ത്|doore ദൂരെ|ullil ഉള്ളിൽ|ulla ഉള്ള
+mumbu മുമ്പ്|shesham ശേഷം|veendum വീണ്ടും|ini ഇനി|iniyum ഇനിയും|verum വെറും|veruthe വെറുതെ|sharikkum ശരിക്കും|chilappol ചിലപ്പോൾ|orikkalum ഒരിക്കലും|pettennu പെട്ടെന്ന്
+kali കളി|kalikkunnu കളിക്കുന്നു|samsaram സംസാരം|samsarikkunnu സംസാരിക്കുന്നു|nirthi നിർത്തി|akathekku അകത്തേക്ക്|purathekku പുറത്തേക്ക്|kathu കത്ത്|kathi കത്തി
+manassil മനസ്സിൽ|kudikkunnu കുടിക്കുന്നു|kudichu കുടിച്ചു|sundari സുന്ദരി|sundaran സുന്ദരൻ|kayyil കയ്യിൽ|payyan പയ്യൻ|penkutti പെൺകുട്ടി|ayal അയാൾ
+pusthakam പുസ്തകം|chithram ചിത്രം|pathram പത്രം|mesha മേശ|kasera കസേര|kattil കട്ടിൽ|adukkala അടുക്കള|muttam മുറ്റം|thottam തോട്ടം|gramam ഗ്രാമം|nagaram നഗരം|kaadu കാട്|mala മല|vandi വണ്ടി
+train ട്രെയിൻ|station സ്റ്റേഷൻ|hotel ഹോട്ടൽ|kalyanam കല്യാണം|premam പ്രേമം|swapnam സ്വപ്നം|vishamam വിഷമം|vishwasam വിശ്വാസം|samshayam സംശയം|athbhutham അത്ഭുതം|aashwasam ആശ്വാസം
+kannuneer കണ്ണുനീർ|kanneer കണ്ണീർ|mounam മൗനം|nimisham നിമിഷം|thirichu തിരിച്ച്|nere നേരെ|adutha അടുത്ത|kazhinja കഴിഞ്ഞ|vanna വന്ന|poya പോയ|aaya ആയ
+drishyam ദൃശ്യം|sambhashanam സംഭാഷണം|rangam രംഗം|shot ഷോട്ട്|sangeetham സംഗീതം|pashchathalam പശ്ചാത്തലം|nishabdatha നിശ്ശബ്ദത
+orma ഓർമ്മ|ormma ഓർമ്മ|ayyo അയ്യോ|scene സീൻ|cut കട്ട്|camera ക്യാമറ|flashback ഫ്ലാഷ്ബാക്ക്|thudarunnu തുടരുന്നു|akam അകം|puram പുറം`;
+const DICT={};
+DICT_SRC.split(/[|\n]/).forEach(e=>{ e=e.trim(); if(!e) return; const sp=e.indexOf(" "); const k=normKey(e.slice(0,sp));
+  DICT[k]=(DICT[k]||[]).concat(e.slice(sp+1).split(",")); });
+
+/* ---- Word endings: stem from the dictionary + a common ending (ammayude, kuttikalum, santhoshamayi…) ---- */
+const VSUF=[["ayirunnu","aa","യിരുന്നു"],["ilekku","i","ലേക്ക്"],["umayi","u","മായി"],["allo","a","ല്ലോ"],["alla","a","ല്ല"],["alle","a","ല്ലേ"],["illa","i","ല്ല"],["ille","i","ല്ലേ"],
+ ["undu","u","ണ്ട്"],["undo","u","ണ്ടോ"],["inte","i","ന്റെ"],["ekku","ee","ക്ക്"],["ilum","i","ലും"],["okke","o","ക്കെ"],["akum","aa","കും"],
+ ["anu","aa","ണ്"],["ano","aa","ണോ"],["ayi","aa","യി"],["ude","u","ടെ"],["inu","i","ന്"],["odu","oo","ട്"],["ode","oo","ടെ"],["ile","i","ലെ"],
+ ["um","u","ം"],["il","i","ൽ"],["e","e",""],["o","oo",""]];
+const OBL=new Set(["il","inte","inu","e","ekku","ilekku","ode","odu","ile","ilum"]);
+const UNCHILLU={"ൻ":"ന","ൾ":"ള","ർ":"ര","ൽ":"ല","ൺ":"ണ"};
+const SIGNS="ാിീുൂെേൈൊോൗൃ";
+function stemOf(key,depth){ return userDict[key] || (DICT[key]&&DICT[key][0]) || (depth>0?morph(key,depth-1):null); }
+function morph(key,depth){
+  const end=s=>s[s.length-1];
+  for(const [raw,v,rest] of VSUF){
+    if(!key.endsWith(raw)) continue;
+    const base=key.slice(0,-raw.length); if(base.length<2) continue;
+    const sign=VSIGN[v][0]; let st;
+    if((st=stemOf(base,depth))){
+      if(end(st)==="ം"){ if(raw!=="um"&&!OBL.has(raw)) return st.slice(0,-1)+"മ"+sign+rest; }
+      else if(UNCHILLU[end(st)]) return st.slice(0,-1)+UNCHILLU[end(st)]+sign+rest;
+    }
+    if((st=stemOf(base+"u",depth)) && end(st)==="്") return st.slice(0,-1)+sign+rest;
+    if(base.endsWith("y") && (st=stemOf(base.slice(0,-1),depth)) && !"ം്".includes(end(st)) && !UNCHILLU[end(st)]) return st+"യ"+sign+rest;
+    if(raw==="um" && base.endsWith("v") && (st=stemOf(base.slice(0,-1)+"m",depth)) && end(st)==="ം") return st.slice(0,-1)+"വും";
+    if(OBL.has(raw) && base.endsWith("th") && (st=stemOf(base.slice(0,-2)+"m",depth)) && end(st)==="ം") return st.slice(0,-1)+"ത്ത"+sign+rest;
+  }
+  let st, b;
+  if(key.endsWith("kku") && (b=key.slice(0,-3)).length>=2 && (st=stemOf(b,depth))){
+    if(UNCHILLU[end(st)]||SIGNS.includes(end(st))) return st+"ക്ക്";
+    if(!"ം്".includes(end(st))) return st+"യ്ക്ക്";
+  }
+  if(key.endsWith("ngal") && (st=stemOf(key.slice(0,-4)+"m",depth)) && end(st)==="ം") return st.slice(0,-1)+"ങ്ങൾ";
+  if(key.endsWith("kal") && (b=key.slice(0,-3)).length>=2 && (st=stemOf(b,depth))){
+    if(end(st)==="്") return st.slice(0,-1)+"ുകൾ";
+    if(end(st)!=="ം") return st+"കൾ";
+  }
+  if(key.endsWith("te") && (st=stemOf(key.slice(0,-2),depth)) && end(st)==="ൻ") return st.slice(0,-1)+"ന്റെ";
+  return null;
+}
+
+let userDict={};            // learned corrections: normKey → Malayalam
+const candCache=new Map();
+function wordCands(raw){
+  if(candCache.has(raw)) return candCache.get(raw);
+  let out;
+  const letters=raw.replace(/~/g,"");
+  if(letters.length>=2 && letters===letters.toUpperCase()){            // INT, EXT, CUT TO stay English
+    out=[raw, ...ruleCands(raw.toLowerCase()).slice(0,3)]; var sure=true;
+  } else {
+    let w=raw;
+    if(/^[A-Z][a-z~]*$/.test(w)) w=w.toLowerCase();                    // sentence-case from a PC keyboard
+    const plain=w===w.toLowerCase(), key=normKey(w);
+    out=[];
+    if(plain && userDict[key]) out.push(userDict[key]);
+    if(plain && DICT[key]) out.push(...DICT[key]);
+    else if(plain){ const m=morph(key,2); if(m) out.push(m); }
+    var sure=out.length>0;
+    out.push(...ruleCands(w));
+    out=[...new Set(out)].slice(0,8); out.push(raw);
+  }
+  out=[...new Set(out)]; out.sure=sure;
+  candCache.set(raw,out); return out;
+}
+function learn(raw,ml){ userDict[normKey(raw)]=ml; candCache.clear(); }
+/* Split a line into pieces: Manglish words get converted, everything else passes through */
+function convertLine(text){
+  const parts=[]; const re=/\{([^}]*)\}|([A-Za-z~]+)|([^A-Za-z~{]+|\{)/g; let m;
+  while((m=re.exec(text))){
+    if(m[1]!==undefined) parts.push({raw:m[0],ml:m[1],word:false,start:m.index});
+    else if(m[2]){ const c=wordCands(m[2]); parts.push({raw:m[2],ml:c[0],cands:c,word:true,start:m.index}); }
+    else parts.push({raw:m[0],ml:m[0],word:false,start:m.index});
+  }
+  return {ml:parts.map(p=>p.ml).join(""),parts};
+}
+const translit=t=>convertLine(t).ml;
+
+/* =====================================================================
+   APP
+   ===================================================================== */
+const TYPES=[["scene","Scene"],["action","Action"],["character","Character"],["paren","(Paren)"],["dialogue","Dialogue"],["transition","Transition"]];
+const NEXT={scene:"action",action:"action",character:"dialogue",paren:"dialogue",dialogue:"action",transition:"scene"};
+const $=id=>document.getElementById(id);
+const el=(tag,cls,txt)=>{ const e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; };
+const uid=()=>Math.random().toString(36).slice(2,10);
+const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const keepFocus=b=>b.addEventListener("pointerdown",e=>e.preventDefault());
+const newScript=()=>({id:uid(),title:"",author:"",contact:"",blocks:[],driveIds:{}});
+
+const NATIVE=window.ThkNative||null;   // set when running inside the Android app
+let script=newScript(), index=[];
+let settings={ai:true,theme:"auto",layout:"std",fs:1,userDict:{},gclient:"",current:null};
+let curType="scene", selId=null, insertAfter=null, listening=false, manualFocus=null;
+
+/* ---------- Storage (Claude storage inside Claude, browser storage on your own site) ---------- */
+const LS="local"+"Storage";
+const store={
+  async get(k){ if(window.storage){ try{ const r=await window.storage.get(k,false); return r?r.value:null; }catch(e){ return null; } }
+    try{ return window[LS].getItem(k); }catch(e){ return null; } },
+  async set(k,v){ if(window.storage){ try{ return !!(await window.storage.set(k,v,false)); }catch(e){ return false; } }
+    try{ window[LS].setItem(k,v); return true; }catch(e){ return false; } },
+  async del(k){ if(window.storage){ try{ await window.storage.delete(k,false); }catch(e){} return; }
+    try{ window[LS].removeItem(k); }catch(e){} }
+};
+let saveT,setT;
+function save(){ clearTimeout(saveT); $("saved").textContent="Saving…"; saveT=setTimeout(flush,700); }
+async function flush(){
+  clearTimeout(saveT);
+  const inIndex=index.find(x=>x.id===script.id);
+  if(!inIndex && !script.blocks.length && !script.title){ $("saved").textContent=""; return; }
+  const clean={...script,blocks:script.blocks.map(({id,type,text})=>({id,type,text}))};
+  const ok=await store.set("thk:s:"+script.id,JSON.stringify(clean));
+  const meta={id:script.id,title:script.title||"Untitled script",updated:Date.now()};
+  if(inIndex) Object.assign(inIndex,meta); else index.unshift(meta);
+  await store.set("thk:index",JSON.stringify(index));
+  $("saved").textContent=ok?"Saved":"";
+}
+function saveSettings(){ clearTimeout(setT); setT=setTimeout(()=>{ settings.userDict=userDict; store.set("thk:settings",JSON.stringify(settings)); },500); }
+async function load(){
+  try{
+    const s=await store.get("thk:settings"); if(s) Object.assign(settings,JSON.parse(s));
+    userDict=settings.userDict||{};
+    const ix=await store.get("thk:index"); if(ix) index=JSON.parse(ix)||[];
+    if(index.length){
+      const id=settings.current&&index.find(x=>x.id===settings.current)?settings.current:index[0].id;
+      const v=await store.get("thk:s:"+id); if(v) script=Object.assign(newScript(),JSON.parse(v));
+    } else {                                   // bring over a script from the earlier version
+      const old=await store.get("malscript:current");
+      if(old){ const d=JSON.parse(old); if(d.script&&d.script.blocks&&d.script.blocks.length) script=Object.assign(newScript(),d.script,{id:uid()}); }
+      const og=await store.get("malscript:gclient"); if(og&&!settings.gclient) settings.gclient=og;
+    }
+  }catch(e){}
+  gClientId=settings.gclient||GOOGLE_CLIENT_ID;
+  openScript(script);
+  if(script.blocks.length) save();
+}
+function openScript(s){
+  script=s; script.driveIds=script.driveIds||{};
+  script.blocks.forEach(b=>{ delete b.pending; if(!b.id) b.id=uid(); });
+  settings.current=script.id; undoStack=[]; redoStack=[]; selId=null; insertAfter=null;
+  $("title").value=script.title||""; $("authorInp").value=script.author||""; $("contactInp").value=script.contact||"";
+  const last=script.blocks[script.blocks.length-1]; curType=last?NEXT[last.type]:"scene";
+  applyView(); setAi(settings.ai,true); render(); renderChips(); updateComposer(); updateUndoBtns(); updateDriveUI(); saveSettings();
+}
+
+/* ---------- Undo ---------- */
+let undoStack=[],redoStack=[];
+const snap=()=>JSON.stringify({t:script.title,b:script.blocks.map(({id,type,text})=>({id,type,text}))});
+function pushUndo(s){ undoStack.push(s||snap()); if(undoStack.length>100) undoStack.shift(); redoStack=[]; updateUndoBtns(); }
+function restore(s){ const d=JSON.parse(s); script.title=d.t; script.blocks=d.b; $("title").value=d.t; selId=null; insertAfter=null; render(); renderChips(); save(); updateUndoBtns(); }
+function undo(){ if(!undoStack.length) return; redoStack.push(snap()); restore(undoStack.pop()); }
+function redo(){ if(!redoStack.length) return; undoStack.push(snap()); restore(redoStack.pop()); }
+function updateUndoBtns(){ $("undoBtn").disabled=!undoStack.length; $("redoBtn").disabled=!redoStack.length; }
+$("undoBtn").onclick=undo; $("redoBtn").onclick=redo;
+
+/* ---------- Script page ---------- */
+function characters(){
+  const m=new Map();
+  script.blocks.forEach(b=>{ if(b.type!=="character") return; const n=b.text.replace(/\s*\(.*\)\s*$/,"").trim(); if(n) m.set(n,(m.get(n)||0)+1); });
+  return new Map([...m].sort((a,b)=>b[1]-a[1]));
+}
+let editSnap=null, editOrig="";
+function render(){
+  const page=$("page"); page.className="page"+(settings.layout==="two"?" two":""); page.innerHTML="";
+  if(script.title){
+    const tp=el("div"); tp.id="printTitle";
+    tp.innerHTML="<h1>"+esc(script.title)+"</h1>"+(script.author?"<p>Written by</p><p><b>"+esc(script.author)+"</b></p>":"")+(script.contact?'<p style="margin-top:30pt">'+esc(script.contact)+"</p>":"");
+    page.appendChild(tp);
+  }
+  if(!script.blocks.length){
+    page.insertAdjacentHTML("beforeend",'<div class="empty">Your script starts here.<br>Type <b>INT. veedu - raathri</b> for a scene heading,<br>then describe the action: <b>raju vathil thurannu akathekku varunnu</b><br>or tap the mic and speak.</div>');
+    renderSide(); return;
+  }
+  script.blocks.forEach(b=>{
+    const d=el("div","blk "+b.type+(b.pending?" pending":"")+(b.id===selId?" sel":""));
+    d.contentEditable=!b.pending; d.dataset.id=b.id; d.textContent=b.text; d.spellcheck=false;
+    d.oninput=()=>{ b.text=d.textContent; save(); };
+    d.onfocus=()=>{ selId=b.id; editSnap=snap(); editOrig=b.text;
+      document.querySelectorAll(".blk.sel").forEach(x=>x.classList.remove("sel")); d.classList.add("sel"); renderChips(); };
+    d.onblur=()=>{ if(b.text!==editOrig){ pushUndo(editSnap); editOrig=b.text; renderSide(); } };
+    d.onkeydown=e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); d.blur(); } };
+    d.onpaste=e=>{ e.preventDefault(); document.execCommand("insertText",false,(e.clipboardData||window.clipboardData).getData("text").replace(/\s*\n\s*/g," ")); };
+    page.appendChild(d);
+    if(b.id===insertAfter){ const h=el("div","here","New lines go here · tap to cancel"); h.onclick=()=>{ insertAfter=null; render(); }; page.appendChild(h); }
+  });
+  renderSide();
+}
+function renderSide(){
+  const sn=$("sceneNav"), cn=$("charNav"); sn.innerHTML=""; cn.innerHTML="";
+  let n=0;
+  script.blocks.forEach(b=>{ if(b.type!=="scene") return; n++;
+    const bt=el("button","navitem"); bt.innerHTML="<i>"+n+"</i><span>"+esc(b.text||"…")+"</span>";
+    bt.onclick=()=>{ closeSide(); jumpTo(b.id); }; sn.appendChild(bt); });
+  if(!n) sn.appendChild(el("div","sidenote","Scene headings appear here so you can jump between them."));
+  const ch=characters();
+  ch.forEach((c,name)=>{ const bt=el("button","navitem"); bt.innerHTML="<span>"+esc(name)+"</span><small>"+c+"</small>";
+    bt.title="Start a dialogue for "+name;
+    bt.onclick=()=>{ closeSide(); quickCommit("character",name); $("inp").focus(); }; cn.appendChild(bt); });
+  cn.appendChild(el("div","sidenote",ch.size?"Tap a name to start their next dialogue.":"Characters appear here once they speak."));
+  const st=stats(); $("statMini").innerHTML="<span>"+n+" scene"+(n===1?"":"s")+"</span><span>about "+st.pages+" page"+(st.pages===1?"":"s")+"</span>";
+  $("libCount").textContent=index.length?index.length+" saved":"";
+}
+function jumpTo(id){ const d=document.querySelector('.blk[data-id="'+id+'"]'); if(d) d.scrollIntoView({block:"start",behavior:"smooth"}); }
+function scrollToNew(){
+  requestAnimationFrame(()=>{ if(insertAfter){ const d=document.querySelector('.blk[data-id="'+insertAfter+'"]'); if(d) d.scrollIntoView({block:"center"}); }
+    else { const m=$("main"); m.scrollTop=m.scrollHeight; } });
+}
+function clearSel(){ if(!selId) return; selId=null; document.querySelectorAll(".blk.sel").forEach(x=>x.classList.remove("sel")); renderChips(); }
+function addBlock(type,text,pending=false){
+  if(type==="paren" && text && !/^\(.*\)$/.test(text.trim())) text="("+text.trim()+")";
+  const b={id:uid(),type,text,pending};
+  if(insertAfter){ const i=script.blocks.findIndex(x=>x.id===insertAfter);
+    if(i>-1){ script.blocks.splice(i+1,0,b); insertAfter=b.id; return b; } insertAfter=null; }
+  script.blocks.push(b); return b;
+}
+function afterAdd(){ render(); renderChips(); updateComposer(); save(); scrollToNew(); }
+function quickCommit(type,text){ pushUndo(); addBlock(type,text); curType=NEXT[type]; afterAdd(); }
+
+/* ---------- Line type chips and selected-line actions ---------- */
+function renderChips(){
+  const nav=$("chips"); nav.querySelectorAll(".chip").forEach(e=>e.remove());
+  const sel=selId&&script.blocks.find(b=>b.id===selId);
+  const active=sel?sel.type:curType;
+  $("chipHint").textContent=sel?"Selected line:":"Next line:";
+  TYPES.forEach(([t,l])=>{
+    const b=el("button","chip",l); b.setAttribute("aria-pressed",t===active); keepFocus(b);
+    b.onclick=()=>{ if(sel){ pushUndo(); sel.type=t; render(); save(); } else { curType=t; updateComposer(); } renderChips(); };
+    nav.appendChild(b);
+  });
+  const bar=$("selBar"); bar.innerHTML=""; bar.hidden=!sel; if(!sel) return;
+  const act=(label,fn,cls)=>{ const b=el("button","chip"+(cls?" "+cls:""),label); keepFocus(b); b.onclick=fn; bar.appendChild(b); };
+  const idx=()=>script.blocks.findIndex(b=>b.id===selId);
+  const move=d=>{ const i=idx(), j=i+d; if(j<0||j>=script.blocks.length) return; pushUndo();
+    [script.blocks[i],script.blocks[j]]=[script.blocks[j],script.blocks[i]]; render(); save(); jumpSel(); };
+  const jumpSel=()=>{ const d=document.querySelector('.blk[data-id="'+selId+'"]'); if(d) d.scrollIntoView({block:"nearest"}); };
+  act("↑ Move up",()=>move(-1)); act("↓ Move down",()=>move(1));
+  act("Insert below",()=>{ insertAfter=selId; document.activeElement.blur(); selId=null; render(); renderChips(); $("inp").focus(); },"gold");
+  act("Duplicate",()=>{ pushUndo(); const i=idx(); const s=script.blocks[i]; script.blocks.splice(i+1,0,{id:uid(),type:s.type,text:s.text}); render(); save(); });
+  act("AI tools",()=>openAi(),"gold");
+  act("Delete",()=>{ pushUndo(); script.blocks=script.blocks.filter(b=>b.id!==selId); if(insertAfter===selId) insertAfter=null; selId=null; render(); renderChips(); save(); },"danger");
+}
+
+/* ---------- Composer: Manglish in, Malayalam out ---------- */
+const inp=$("inp");
+const QUICK={
+  scene:["INT. ","EXT. ","അകം - ","പുറം - ","പകൽ","രാത്രി","സന്ധ്യ","പ്രഭാതം"],
+  transition:["CUT TO:","കട്ട് ടു","FADE IN:","FADE OUT.","ഡിസോൾവ്","ഇന്റർകട്ട്"],
+  paren:["(ദേഷ്യത്തോടെ)","(ചിരിച്ചുകൊണ്ട്)","(പതുക്കെ)","(കരഞ്ഞുകൊണ്ട്)","(ഫോണിൽ)","(V.O.)","(O.S.)"]
+};
+function updateComposer(){
+  if(listening) return;
+  const v=inp.value, conv=convertLine(v), pv=$("preview"), cb=$("cands");
+  pv.className=""; pv.innerHTML=""; cb.innerHTML="";
+  pv.appendChild(el("span","lbl",(TYPES.find(t=>t[0]===curType)||[])[1]));
+  // which word are the suggestions for? the one at the cursor, unless a preview word was tapped
+  const caret=document.activeElement===inp?inp.selectionStart:v.length;
+  let focus=null;
+  conv.parts.forEach((p,i)=>{ if(!p.word) return;
+    if(manualFocus===i) focus=p;
+    else if(manualFocus===null && p.start<=caret) focus=p; });
+  conv.parts.forEach((p,i)=>{
+    if(!p.word){ pv.appendChild(document.createTextNode(p.ml)); return; }
+    const s=el("span","w"+(p.cands.sure?"":" unsure")+(p===focus?" on":""),p.ml);
+    s.addEventListener("pointerdown",e=>e.preventDefault());
+    s.onclick=()=>{ manualFocus=i; updateComposer(); };
+    pv.appendChild(s);
+  });
+  const chip=(label,fn,cls)=>{ const b=el("button","cand"+(cls?" "+cls:""),label); keepFocus(b); b.onclick=fn; cb.appendChild(b); return b; };
+  if(!v.trim()){
+    if(curType==="scene") QUICK.scene.forEach(q=>chip(q.trim(),()=>{ inp.value+=(inp.value&&!/\s$/.test(inp.value)?" ":"")+q; inp.focus(); autosize(); updateComposer(); },/[A-Z]/.test(q)?"eng":""));
+    else if(curType==="transition"||curType==="paren") QUICK[curType].forEach(q=>chip(q,()=>quickCommit(curType,q),/[A-Z]/.test(q)?"eng":""));
+    else if(curType==="character"&&characters().size) characters().forEach((c,name)=>chip(name,()=>quickCommit("character",name)));
+    else cb.appendChild(el("span","candHint","Spelling choices appear here as you type"));
+    return;
+  }
+  if(curType==="character"){ const t=conv.ml.trim(); characters().forEach((c,name)=>{ if(name!==t&&name.startsWith(t.slice(0,2))) chip(name,()=>{ inp.value=""; quickCommit("character",name); },"on"); }); }
+  if(focus) focus.cands.forEach((c,j)=>chip(c,()=>{ learn(focus.raw,c); saveSettings(); updateComposer(); },(j===0?"on":"")+(c===focus.raw?" eng":"")));
+}
+function autosize(){ inp.style.height="auto"; inp.style.height=Math.min(inp.scrollHeight,120)+"px"; }
+function lineFrom(type,raw){
+  const c=convertLine(raw);
+  const needAI=!NATIVE&&settings.ai&&aiOK&&c.parts.some(p=>p.word&&!p.cands.sure);
+  const b=addBlock(type,c.ml,needAI);
+  if(needAI) polish(b.id,type,raw,c);
+}
+function commit(){
+  const raw=inp.value.replace(/\n/g," ").trim(); inp.value=""; manualFocus=null; autosize();
+  if(!raw){ updateComposer(); return; }
+  pushUndo();
+  // obvious line types are recognised whatever type is selected
+  const auto=/^\(.+\)$/.test(raw)?"paren" : /^(INT|EXT|int|ext)\.(\s|\/|$)/.test(raw)?"scene" : /^(CUT TO|FADE IN|FADE OUT|DISSOLVE TO|SMASH CUT|INTERCUT)\b/.test(raw)?"transition" : null;
+  const colon=!auto&&raw.match(/^([^:{}]{1,30}):\s*(.+)$/);
+  if(auto){ lineFrom(auto,raw); curType=NEXT[auto]; }
+  else if(colon && ["action","character","dialogue"].includes(curType)){
+    lineFrom("character",colon[1].trim()); lineFrom("dialogue",colon[2]); curType="action";
+  } else { lineFrom(curType,raw); curType=NEXT[curType]; }
+  afterAdd();
+}
+inp.addEventListener("input",()=>{ manualFocus=null; if(inp.value.includes("\n")){ commit(); return; } autosize(); updateComposer(); });
+inp.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); commit(); }
+  else if(e.key==="Tab"){ e.preventDefault(); const i=TYPES.findIndex(t=>t[0]===curType); curType=TYPES[(i+(e.shiftKey?5:1))%6][0]; renderChips(); updateComposer(); }
+});
+inp.addEventListener("keyup",e=>{ if(e.key.startsWith("Arrow")){ manualFocus=null; updateComposer(); } });
+inp.addEventListener("click",()=>{ manualFocus=null; updateComposer(); });
+inp.addEventListener("focus",clearSel);
+$("add").onclick=()=>{ commit(); inp.focus(); };
+$("title").oninput=e=>{ script.title=e.target.value; save(); };
+$("authorInp").oninput=e=>{ script.author=e.target.value; save(); };
+$("contactInp").oninput=e=>{ script.contact=e.target.value; save(); };
+$("main").addEventListener("pointerdown",e=>{ if(!e.target.closest(".blk")) clearSel(); });
+
+/* ---------- AI (works inside Claude) ---------- */
+let aiOK=true, aiFails=0;
+function setAi(v,silent){ settings.ai=v; if(v){ aiOK=true; aiFails=0; } $("aiTog").setAttribute("aria-checked",v); if(!silent) saveSettings(); }
+$("aiTog").onclick=()=>{ setAi(!settings.ai); toast(settings.ai?"AI polish on: guessed words are corrected after you press Enter":"AI polish off: the built-in engine and your saved choices are used"); };
+function aiFailed(){ aiFails++; if(aiFails>=2&&settings.ai){ aiOK=false; setAi(false); toast("AI isn't reachable here, so AI polish is off. The built-in engine still works."); } }
+async function callClaude(system,user){
+  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,system,messages:[{role:"user",content:user}]})});
+  if(!res.ok) throw new Error("API "+res.status);
+  const data=await res.json(); aiFails=0;
+  return data.content.map(c=>c.type==="text"?c.text:"").join("").trim();
+}
+const recent=n=>script.blocks.filter(b=>!b.pending).slice(-n).map(b=>b.type+": "+b.text).join("\n")||"(none)";
+const SYS_CONVERT="You convert Manglish (Malayalam typed casually in English letters) into correct, natural Malayalam script for a film screenplay, spelled the way a native writer would. You get the typed Manglish and a rough machine conversion; fix wrong letters, vowel lengths, chillus and doubled consonants. Do not change the wording, add or drop words, or merge words. Text already in Malayalam stays as is. ALL-CAPS words and screenplay terms (INT., EXT., CUT TO, V.O.) stay in English. Spell character names the same way as in the known list. Keep punctuation. Output ONLY the corrected line.";
+async function polish(id,type,raw,c){
+  let out=null;
+  try{ out=await callClaude(SYS_CONVERT,"Line type: "+type+"\nKnown characters: "+([...characters().keys()].join(", ")||"none")+"\nPrevious lines:\n"+recent(4)+"\n\nManglish typed: "+raw+"\nRough conversion: "+c.ml); }
+  catch(e){ aiFailed(); }
+  const b=script.blocks.find(x=>x.id===id); if(!b) return;
+  b.pending=false;
+  if(out){ out=out.replace(/^["“]|["”]$/g,"").trim(); b.text=type==="paren"&&!/^\(.*\)$/.test(out)?"("+out+")":out; autoLearn(c,out); }
+  const d=document.querySelector('.blk[data-id="'+id+'"]');
+  if(d){ d.textContent=b.text; d.classList.remove("pending"); d.contentEditable=true; } else render();
+  renderSide(); save();
+}
+/* When AI fixes a guessed word, remember it so next time it is right instantly, even offline */
+function autoLearn(c,out){
+  const rw=c.parts.filter(p=>p.word);
+  const mw=out.split(/\s+/).map(w=>w.replace(/^[^\u0D00-\u0D7FA-Za-z]+|[^\u0D00-\u0D7FA-Za-z]+$/g,"")).filter(Boolean);
+  if(rw.length!==mw.length) return;
+  rw.forEach((p,i)=>{ if(!p.cands.sure && p.raw===p.raw.toLowerCase() && /^[\u0D00-\u0D7F\u200C\u200D]+$/.test(mw[i]) && mw[i]!==p.ml) learn(p.raw,mw[i]); });
+  saveSettings();
+}
+const SYS_FORMAT=`You format spoken Malayalam into screenplay elements. The writer dictates a film script; their words may describe action, a scene location, or a character speaking. Split the speech into elements.
+Types: scene (location/time heading), action (what we see), character (speaker name only), paren (short delivery note), dialogue (spoken line), transition (e.g. CUT TO).
+Cues: "X പറയുന്നു / പറഞ്ഞു / ചോദിക്കുന്നു" means X speaks the following words: emit character X then dialogue. Words like സീൻ / രംഗം start a scene heading. Words like ആക്ഷൻ mark action. Remove command words themselves. Fix obvious speech-recognition spelling errors and add punctuation. Spell character names as in the known list. Keep everything in Malayalam script.
+Reply with ONLY a JSON array like [{"type":"action","text":"..."}]. No markdown.`;
+const parseBlocks=raw=>{ const arr=JSON.parse(raw.replace(/```json|```/g,"").trim()); if(!Array.isArray(arr)) throw 0;
+  return arr.filter(e=>e&&NEXT[e.type]&&e.text).map(e=>({id:uid(),type:e.type,text:e.type==="paren"&&!/^\(.*\)$/.test(e.text)?"("+e.text+")":String(e.text)})); };
+async function formatSpeech(text){
+  const ctx=recent(6), ph=addBlock(curType,text,true); render(); scrollToNew();
+  try{
+    const valid=parseBlocks(await callClaude(SYS_FORMAT,"Known characters: "+([...characters().keys()].join(", ")||"none")+"\nRecent script lines:\n"+ctx+"\n\nNew speech:\n"+text));
+    if(!valid.length) throw 0;
+    const i=script.blocks.indexOf(ph); if(i<0) return;
+    script.blocks.splice(i,1,...valid);
+    if(insertAfter===ph.id) insertAfter=valid[valid.length-1].id;
+    curType=NEXT[valid[valid.length-1].type];
+  }catch(e){
+    const i=script.blocks.indexOf(ph);
+    if(i>-1){ script.blocks.splice(i,1); if(insertAfter===ph.id) insertAfter=i>0?script.blocks[i-1].id:null; }
+    voiceRules(text); aiFailed();
+  }
+  afterAdd();
+}
+
+/* AI writing tools */
+let aiRes=null;
+function openAi(){
+  closeSheets(); const sel=selId&&script.blocks.find(b=>b.id===selId);
+  $("aiTarget").textContent=sel?"Selected line: “"+sel.text.slice(0,80)+(sel.text.length>80?"…":"")+"”":"Tap a line in your script first to rewrite or translate it. The two buttons below work on the whole script.";
+  $("aiActs").querySelectorAll("button").forEach(b=>b.disabled=!sel);
+  $("aiOut").hidden=true; $("aiUse").hidden=true; aiRes=null; $("aiSheet").classList.add("open");
+}
+const AI_ASK={natural:"Rewrite it so it sounds like natural spoken Malayalam, the way real people talk.",short:"Make it shorter and punchier without losing the meaning.",
+  emotional:"Make it more emotional and heartfelt.",funny:"Add a touch of natural Malayalam humour.",english:"Translate it into natural English, subtitle style."};
+async function runAi(kind){
+  const out=$("aiOut"); out.hidden=false; $("aiUse").hidden=true; out.textContent="Thinking…"; aiRes=null;
+  const sel=selId&&script.blocks.find(b=>b.id===selId);
+  try{
+    if(kind==="next"){
+      const blocks=parseBlocks(await callClaude("You are an experienced Malayalam screenwriter. Continue the screenplay with the next 3 to 5 elements that follow naturally, in Malayalam script, matching the tone and the characters' voices. Types allowed: scene, action, character, paren, dialogue, transition. Reply with ONLY a JSON array like [{\"type\":\"action\",\"text\":\"...\"}]. No markdown.",
+        "Title: "+(script.title||"untitled")+"\nScript so far (most recent lines):\n"+recent(30)));
+      if(!blocks.length) throw 0;
+      aiRes={kind,blocks}; out.innerHTML=blocks.map(b=>'<span class="t">'+TYPES.find(t=>t[0]===b.type)[1]+"</span>"+esc(b.text)).join("\n");
+      $("aiApply").textContent="Add to script"; $("aiApply").hidden=false;
+    } else if(kind==="summary"){
+      if(!script.blocks.length) throw new Error("Write a few lines first.");
+      const t=await callClaude("You are a script editor. Write a one-sentence logline and a 3-4 sentence synopsis of this Malayalam screenplay. Give both in Malayalam first, then in English. Plain text, no markdown.",
+        "Title: "+(script.title||"untitled")+"\n\n"+script.blocks.map(b=>b.type+": "+b.text).join("\n").slice(-12000));
+      aiRes={kind,text:t}; out.textContent=t; $("aiApply").hidden=true;
+    } else {
+      if(!sel) throw new Error("Tap a line in your script first.");
+      const t=await callClaude("You are an experienced Malayalam screenwriter helping polish a script. "+AI_ASK[kind]+(kind==="english"?"":" Keep it in Malayalam script and keep it a single screenplay "+sel.type+" line.")+" Output ONLY the result, no quotes or notes.",
+        "Lines before it:\n"+script.blocks.slice(Math.max(0,script.blocks.indexOf(sel)-6),script.blocks.indexOf(sel)).map(b=>b.type+": "+b.text).join("\n")+"\n\nThe line ("+sel.type+"):\n"+sel.text);
+      aiRes={kind,text:t,id:sel.id}; out.textContent=t; $("aiApply").textContent="Use this"; $("aiApply").hidden=kind==="english";
+    }
+    $("aiUse").hidden=false;
+  }catch(e){ out.textContent=e&&e.message&&!/API|fetch|JSON/i.test(e.message)?e.message:"AI tools need the app to be open inside Claude. They aren't reachable from here right now."; }
+}
+$("aiActs").querySelectorAll("button").forEach(b=>b.onclick=()=>runAi(b.dataset.ai));
+$("aiNext").onclick=()=>runAi("next"); $("aiSummary").onclick=()=>runAi("summary");
+$("aiCopy").onclick=()=>{ if(aiRes) copyText(aiRes.text||aiRes.blocks.map(b=>b.text).join("\n")); toast("Copied"); };
+$("aiApply").onclick=()=>{
+  if(!aiRes) return; pushUndo();
+  if(aiRes.kind==="next"){ const keep=insertAfter; if(selId) insertAfter=selId;
+    aiRes.blocks.forEach(b=>addBlock(b.type,b.text)); if(selId) insertAfter=keep;
+    if(!insertAfter) curType=NEXT[aiRes.blocks[aiRes.blocks.length-1].type]; }
+  else { const b=script.blocks.find(x=>x.id===aiRes.id); if(b) b.text=aiRes.text; }
+  closeSheets(); afterAdd(); toast("Added. Undo brings the old version back.");
+};
+
+/* ---------- Voice ---------- */
+function voiceRules(t){
+  t=t.trim(); let m;
+  if((m=t.match(/^(സീൻ|സീന്|രംഗം|scene)\s*(.*)$/i))){ addBlock("scene",m[2]||t); curType="action"; }
+  else if((m=t.match(/^(ആക്ഷൻ|ആക്ഷന്|action)\s*(.*)$/i))){ addBlock("action",m[2]); curType="action"; }
+  else if((m=t.match(/^(ഡയലോഗ്|dialogue)\s*(.*)$/i))){ addBlock("dialogue",m[2]); curType="action"; }
+  else if(/^(കട്ട്|cut to|ഫേഡ്|fade)/i.test(t)){ addBlock("transition",t); curType="scene"; }
+  else if((m=t.match(/^(കഥാപാത്രം)\s*(.+)$/))){ addBlock("character",m[2]); curType="dialogue"; }
+  else if((m=t.match(/^(\S+)\s+(പറയുന്നു|പറഞ്ഞു|ചോദിക്കുന്നു|ചോദിച്ചു|says)\s*(.*)$/i))){
+    addBlock("character",m[1]); if(m[3]){ addBlock("dialogue",m[3]); curType="action"; } else curType="dialogue"; }
+  else { addBlock(curType,t); curType=NEXT[curType]; }
+}
+function onSpeech(t){ pushUndo(); if(!NATIVE&&settings.ai&&aiOK) formatSpeech(t); else { voiceRules(t); afterAdd(); } }
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null;
+function setMic(on){ listening=on; $("mic").classList.toggle("on",on); $("mic").setAttribute("aria-label",on?"Stop voice typing":"Start voice typing");
+  if(on){ $("cands").innerHTML=""; $("preview").className="listening"; $("preview").textContent="Listening… speak in Malayalam"; } else updateComposer(); }
+window.__thkVoice=(type,text)=>{
+  if(type==="partial"){ if(listening){ $("preview").className="listening"; $("preview").textContent=text||"Listening… speak in Malayalam"; } }
+  else if(type==="final"){ if(text&&text.trim()) onSpeech(text.trim()); if(listening){ $("preview").className="listening"; $("preview").textContent="Listening… speak in Malayalam"; } }
+  else if(type==="error"){ setMic(false);
+    toast(text==="permission"?"Allow microphone access to use voice typing.":text==="network"?"Voice typing needs an internet connection.":text==="language"?"Malayalam voice typing isn't installed. Add Malayalam in the Google app's voice settings.":text==="unavailable"?"Voice typing needs the Google app on this phone.":"Voice typing stopped. Tap the mic to try again."); }
+};
+function startVoice(){
+  if(NATIVE){ NATIVE.startVoice(); setMic(true); clearSel(); return; }
+  if(!SR){ toast("Voice typing isn't supported in this browser. Open the app in Chrome."); return; }
+  rec=new SR(); rec.lang="ml-IN"; rec.continuous=true; rec.interimResults=true;
+  rec.onresult=e=>{
+    let interim="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i], t=r[0].transcript.trim();
+      if(r.isFinal){ if(t) onSpeech(t); }
+      else interim+=t+" ";
+    }
+    $("preview").className="listening"; $("preview").textContent=interim.trim()||"Listening… speak in Malayalam";
+  };
+  rec.onerror=e=>{
+    if(e.error==="not-allowed"||e.error==="service-not-allowed"){ toast("Microphone is blocked. Allow mic access, or open the app in Chrome."); setMic(false); }
+    else if(e.error==="language-not-supported"){ toast("Malayalam voice isn't available in this browser. Try Chrome."); setMic(false); }
+  };
+  rec.onend=()=>{ if(listening){ try{ rec.start(); }catch(_){ setMic(false); } } };
+  try{ rec.start(); setMic(true); clearSel(); }catch(e){ toast("Couldn't start the microphone."); }
+}
+$("mic").onclick=()=>{ if(listening){ listening=false; if(NATIVE) NATIVE.stopVoice(); else try{ rec.stop(); }catch(_){} setMic(false); } else startVoice(); };
+
+/* ---------- Read aloud ---------- */
+let reading=false;
+let ttsNext=null;
+window.__thkTts=ev=>{ if(ev==="done"){ const f=ttsNext; ttsNext=null; if(f) f(); }
+  else { stopReading(); toast(ev==="language"?"No Malayalam voice on this phone. Install one in Settings → Text-to-speech.":"Couldn't read aloud on this phone."); } };
+function stopReading(){ reading=false; ttsNext=null; try{ if(NATIVE) NATIVE.stopSpeak(); else speechSynthesis.cancel(); }catch(e){} document.querySelectorAll(".blk.reading").forEach(x=>x.classList.remove("reading")); $("readBtn").firstChild.textContent="Read script aloud"; }
+function readAloud(){
+  closeSheets();
+  if(reading){ stopReading(); return; }
+  if(!NATIVE&&!("speechSynthesis" in window)){ toast("This browser can't read aloud."); return; }
+  const voices=NATIVE?[]:speechSynthesis.getVoices(), voice=voices.find(v=>/^ml/i.test(v.lang));
+  if(voices.length&&!voice){ toast("No Malayalam voice on this device. Add one in your phone or Windows speech settings."); return; }
+  let i=selId?Math.max(0,script.blocks.findIndex(b=>b.id===selId)):0;
+  if(!script.blocks.length) return;
+  reading=true; $("readBtn").firstChild.textContent="Stop reading"; toast("Reading aloud. Open Tools to stop.");
+  const next=()=>{
+    document.querySelectorAll(".blk.reading").forEach(x=>x.classList.remove("reading"));
+    while(i<script.blocks.length&&(script.blocks[i].type==="paren"||!script.blocks[i].text.trim())) i++;
+    if(!reading||i>=script.blocks.length){ stopReading(); return; }
+    const b=script.blocks[i++], d=document.querySelector('.blk[data-id="'+b.id+'"]');
+    if(d){ d.classList.add("reading"); d.scrollIntoView({block:"center",behavior:"smooth"}); }
+    if(NATIVE){ ttsNext=next; NATIVE.speak(b.text); return; }
+    const u=new SpeechSynthesisUtterance(b.text); u.lang="ml-IN"; if(voice) u.voice=voice; u.rate=.95;
+    u.onend=next; u.onerror=()=>stopReading(); speechSynthesis.speak(u);
+  };
+  next();
+}
+$("readBtn").onclick=readAloud;
+if("speechSynthesis" in window) speechSynthesis.getVoices();
+
+/* ---------- Find and replace ---------- */
+let findPos=-1;
+const toMl=v=>/[A-Za-z]/.test(v)&&!/[\u0D00-\u0D7F]/.test(v)?translit(v):v;
+function findNext(){
+  const rawQ=$("findInp").value.trim(); document.querySelectorAll(".blk.hit").forEach(x=>x.classList.remove("hit"));
+  if(!rawQ){ $("findInfo").textContent=""; return; }
+  const term=toMl(rawQ);
+  const hits=script.blocks.map((b,i)=>b.text.includes(term)||b.text.toLowerCase().includes(rawQ.toLowerCase())?i:-1).filter(i=>i>-1);
+  if(!hits.length){ $("findInfo").textContent="No lines contain “"+term+"”"; findPos=-1; return; }
+  const nxt=hits.find(i=>i>findPos); findPos=nxt===undefined?hits[0]:nxt;
+  const d=document.querySelector('.blk[data-id="'+script.blocks[findPos].id+'"]');
+  if(d){ d.classList.add("hit"); d.scrollIntoView({block:"center",behavior:"smooth"}); }
+  $("findInfo").textContent="“"+term+"” is in "+hits.length+" line"+(hits.length===1?"":"s")+" · showing "+(hits.indexOf(findPos)+1)+" of "+hits.length;
+}
+$("findNext").onclick=findNext;
+$("findInp").addEventListener("keydown",e=>{ if(e.key==="Enter") findNext(); });
+$("findInp").addEventListener("input",()=>{ findPos=-1; });
+$("replAll").onclick=()=>{
+  const rawQ=$("findInp").value.trim(); if(!rawQ) return;
+  const term=toMl(rawQ), rep=toMl($("replInp").value); let n=0; const before=snap();
+  script.blocks.forEach(b=>{ const parts=b.text.split(term); if(parts.length>1){ n+=parts.length-1; b.text=parts.join(rep); } });
+  if(n){ pushUndo(before); render(); save(); }
+  $("findInfo").textContent=n?"Replaced "+n+" time"+(n===1?"":"s")+". Undo brings them back.":"Nothing to replace for “"+term+"”";
+};
+function openFind(){ closeSheets(); $("findBar").hidden=false; $("findInp").focus(); }
+$("findBtn").onclick=openFind;
+$("findClose").onclick=()=>{ $("findBar").hidden=true; document.querySelectorAll(".blk.hit").forEach(x=>x.classList.remove("hit")); };
+
+/* ---------- Statistics ---------- */
+function stats(){
+  const b=script.blocks; let lines=0, words=0, cur=null; const per=new Map();
+  const W={scene:55,action:55,character:30,paren:25,dialogue:32,transition:55}, GAP={scene:2,action:1,character:1,transition:2};
+  b.forEach(x=>{
+    const t=x.text.trim(), wc=t?t.split(/\s+/).length:0; words+=wc;
+    lines+=Math.max(1,Math.ceil(x.text.length/W[x.type]))+(GAP[x.type]||0);
+    if(x.type==="character"){ cur=t.replace(/\s*\(.*\)\s*$/,""); if(cur&&!per.has(cur)) per.set(cur,{n:0,w:0}); }
+    else if(x.type==="dialogue"&&cur&&per.has(cur)){ per.get(cur).n++; per.get(cur).w+=wc; }
+    else if(x.type==="scene"||x.type==="action"||x.type==="transition") cur=null;
+  });
+  const pages=b.length?Math.max(1,Math.round(lines/52*10)/10):0;
+  return {pages,words,scenes:b.filter(x=>x.type==="scene").length,dialogues:b.filter(x=>x.type==="dialogue").length,per};
+}
+$("statsBtn").onclick=()=>{
+  closeSheets(); const s=stats(), max=Math.max(1,...[...s.per.values()].map(v=>v.w));
+  $("statsBody").innerHTML='<div class="stats"><div><b>'+s.scenes+'</b><span>scenes</span></div><div><b>'+s.pages+'</b><span>pages (approx.)</span></div><div><b>'+Math.round(s.pages)+' min</b><span>screen time (approx.)</span></div>'+
+    '<div><b>'+s.words+'</b><span>words</span></div><div><b>'+s.dialogues+'</b><span>dialogue lines</span></div><div><b>'+s.per.size+'</b><span>speaking characters</span></div></div>'+
+    (s.per.size?"<h3>Who speaks the most</h3>"+[...s.per].sort((a,b)=>b[1].w-a[1].w).map(([n,v])=>'<div style="margin:8px 0"><span style="font-family:var(--script)">'+esc(n)+'</span> <small style="color:var(--muted)">'+v.n+' lines, '+v.w+' words</small><div class="bar" style="width:'+Math.max(4,v.w/max*100)+'%"></div></div>').join(""):'<p class="note">Add dialogue to see how lines are shared between characters.</p>')+
+    '<p class="note">Page and time figures are estimates: one page is about one minute on screen.</p>';
+  $("statsSheet").classList.add("open");
+};
+
+/* ---------- View ---------- */
+function applyView(){
+  const r=document.documentElement;
+  if(settings.theme==="auto") r.removeAttribute("data-theme"); else r.setAttribute("data-theme",settings.theme);
+  r.style.setProperty("--fs",settings.fs+"rem");
+  document.querySelectorAll("[data-theme-set]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.themeSet===settings.theme));
+  document.querySelectorAll("[data-layout]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.layout===settings.layout));
+}
+document.querySelectorAll("[data-theme-set]").forEach(b=>b.onclick=()=>{ settings.theme=b.dataset.themeSet; applyView(); saveSettings(); });
+document.querySelectorAll("[data-layout]").forEach(b=>b.onclick=()=>{ settings.layout=b.dataset.layout; applyView(); render(); saveSettings(); });
+$("fsDown").onclick=()=>{ settings.fs=Math.max(.85,+(settings.fs-.05).toFixed(2)); applyView(); saveSettings(); };
+$("fsUp").onclick=()=>{ settings.fs=Math.min(1.4,+(settings.fs+.05).toFixed(2)); applyView(); saveSettings(); };
+
+/* ---------- Library ---------- */
+async function openLib(){
+  closeSheets(); await flush(); const box=$("libList"); box.innerHTML="";
+  if(!index.length) box.appendChild(el("p","note","Scripts you write are kept here automatically."));
+  [...index].sort((a,b)=>b.updated-a.updated).forEach(m=>{
+    const row=el("div","lrow"), open=el("button"), del=el("button","chip danger","Delete");
+    open.innerHTML=esc(m.title)+(m.id===script.id?" · open now":"")+"<small>Edited "+new Date(m.updated).toLocaleString()+"</small>";
+    open.onclick=async()=>{ if(m.id===script.id){ closeSheets(); return; }
+      const v=await store.get("thk:s:"+m.id); if(!v){ toast("Couldn't open that script"); return; }
+      openScript(Object.assign(newScript(),JSON.parse(v))); closeSheets(); };
+    let armed=false;
+    del.onclick=async()=>{ if(!armed){ armed=true; del.textContent="Tap again to delete"; setTimeout(()=>{ armed=false; del.textContent="Delete"; },3000); return; }
+      index=index.filter(x=>x.id!==m.id); await store.del("thk:s:"+m.id); await store.set("thk:index",JSON.stringify(index));
+      if(m.id===script.id) openScript(newScript()); openLib(); };
+    row.append(open,del); box.appendChild(row);
+  });
+  $("libSheet").classList.add("open");
+}
+$("libBtn").onclick=openLib;
+$("newBtn").onclick=async()=>{ await flush(); openScript(newScript()); closeSheets(); toast("New script started. Your other scripts are in My scripts."); };
+
+/* ---------- Export ---------- */
+function asText(){
+  let n=0, L=[]; if(script.title) L.push(script.title); if(script.author) L.push("Written by "+script.author); if(L.length) L.push("");
+  script.blocks.forEach(b=>{ const t=b.text.trim(); if(!t) return;
+    switch(b.type){
+      case "scene": n++; L.push("",n+". "+t,""); break;
+      case "action": L.push(t,""); break;
+      case "character": L.push(" ".repeat(22)+t); break;
+      case "paren": L.push(" ".repeat(16)+t); break;
+      case "dialogue": L.push(" ".repeat(10)+t,""); break;
+      case "transition": L.push(" ".repeat(40)+t,""); break;
+    } });
+  return L.join("\n").replace(/\n{3,}/g,"\n\n").trim()+"\n";
+}
+function asFountain(){
+  const L=[]; if(script.title) L.push("Title: "+script.title); if(script.author) L.push("Author: "+script.author); if(script.contact) L.push("Contact: "+script.contact); if(L.length) L.push("");
+  script.blocks.forEach(b=>{ const t=b.text.trim(); if(!t) return;
+    switch(b.type){
+      case "scene": L.push("","."+t,""); break;
+      case "action": L.push(t,""); break;
+      case "character": L.push("","@"+t); break;
+      case "paren": L.push(t); break;
+      case "dialogue": L.push(t); break;
+      case "transition": L.push("","> "+t,""); break;
+    } });
+  return L.join("\n").replace(/\n{3,}/g,"\n\n").trim()+"\n";
+}
+function asDoc(){
+  const st={scene:"font-weight:bold;margin-top:18pt",action:"margin-top:8pt",character:"margin:12pt 0 0 2.2in;font-weight:bold",
+    paren:"margin-left:1.6in",dialogue:"margin:0 1in 0 1in",transition:"text-align:right;margin-top:12pt;font-weight:bold"};
+  let n=0;
+  const body=script.blocks.filter(b=>b.text.trim()).map(b=>'<p style="'+st[b.type]+';margin-bottom:0">'+esc((b.type==="scene"?(++n)+". ":"")+b.text)+"</p>").join("\n");
+  const tp=script.title?'<h1 style="text-align:center;margin-top:2.5in">'+esc(script.title)+"</h1>"+(script.author?'<p style="text-align:center">Written by<br><b>'+esc(script.author)+"</b></p>":"")+(script.contact?'<p style="text-align:center">'+esc(script.contact)+"</p>":"")+'<br clear="all" style="page-break-before:always">':"";
+  return '<html><head><meta charset="utf-8"><title>'+esc(script.title||"Script")+'</title><style>body{font-family:"Noto Serif Malayalam","Nirmala UI","Kartika",serif;font-size:12pt;line-height:1.6}</style></head><body>'+tp+body+"</body></html>";
+}
+let fmt="script";
+const FMT_NOTES={script:"Keeps every line type, so you can open it here later and keep editing.",
+  doc:"Opens in Microsoft Word and Google Docs with the screenplay layout and a title page. Saved to Drive, it becomes a Google Doc.",
+  fountain:"The standard screenplay text format. Opens in screenwriting apps such as Fade In, Highland and WriterDuet.",
+  txt:"Plain text with spacing for the layout. Opens anywhere."};
+function buildFile(){
+  const base=(script.title||"script").replace(/[\\/:*?"<>|]/g,"").trim()||"script";
+  if(fmt==="script") return {name:base+".mlscript",type:"application/json",
+    data:JSON.stringify({app:"thirakkatha",version:2,savedAt:new Date().toISOString(),script:{title:script.title,author:script.author,contact:script.contact,blocks:script.blocks.map(({type,text})=>({type,text}))}},null,1)};
+  if(fmt==="doc") return {name:base+".doc",type:"application/msword",data:"\ufeff"+asDoc()};
+  if(fmt==="fountain") return {name:base+".fountain",type:"text/plain",data:asFountain()};
+  return {name:base+".txt",type:"text/plain",data:"\ufeff"+asText()};
+}
+window.__thkSaved=(ok,name,cancelled)=>{ if(ok) toast("Saved "+name); else if(!cancelled) toast("Couldn't save the file. Try another folder."); };
+function download(f){
+  if(NATIVE){ const ext=f.name.slice(f.name.lastIndexOf(".")+1);
+    NATIVE.saveFile(f.name,ext==="txt"?"text/plain":ext==="doc"?"application/msword":"application/octet-stream",f.data); return; }
+  const url=URL.createObjectURL(new Blob([f.data],{type:f.type}));
+  const a=el("a"); a.href=url; a.download=f.name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+async function copyText(txt){
+  try{ await navigator.clipboard.writeText(txt); }
+  catch(e){ const ta=el("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
+}
+$("copyBtn").onclick=async()=>{ await copyText(asText()); closeSheets(); toast("Script copied"); };
+$("printBtn").onclick=()=>{ closeSheets(); clearSel(); setTimeout(()=>{ if(NATIVE) NATIVE.print(script.title||""); else window.print(); },200); };
+$("saveDevice").onclick=async()=>{
+  if(!script.blocks.length){ toast("Write something first, then save"); return; }
+  const f=buildFile();
+  if(NATIVE){ closeSheets(); download(f); return; }
+  if(window.showSaveFilePicker){
+    try{
+      const ext=f.name.slice(f.name.lastIndexOf("."));
+      const h=await showSaveFilePicker({suggestedName:f.name,types:[{description:"Script",accept:{[f.type]:[ext]}}]});
+      const w=await h.createWritable(); await w.write(new Blob([f.data],{type:f.type})); await w.close();
+      closeSheets(); toast("Saved "+f.name); return;
+    }catch(e){ if(e.name==="AbortError") return; }
+  }
+  try{ download(f); closeSheets(); toast("Saved "+f.name+" to your downloads"); }
+  catch(e){ toast("This window can't save files. Open the app in Chrome to save."); }
+};
+function loadScriptData(d,name){
+  const s=d&&(d.script||d); if(!s||!Array.isArray(s.blocks)) throw new Error("bad");
+  const n=newScript(); n.title=s.title||""; n.author=s.author||""; n.contact=s.contact||"";
+  n.blocks=s.blocks.filter(b=>b&&NEXT[b.type]).map(b=>({id:uid(),type:b.type,text:String(b.text||"")}));
+  openScript(n); save(); closeSheets(); toast("Opened "+name); return n;
+}
+$("openBtn").onclick=()=>$("openFile").click();
+$("openFile").onchange=async e=>{
+  const file=e.target.files[0]; e.target.value=""; if(!file) return;
+  try{ const d=JSON.parse(await file.text()); await flush(); loadScriptData(d,file.name); }
+  catch(err){ toast("That isn't a script file. Choose a .mlscript file saved from this app."); }
+};
+function setFmt(v){ fmt=v; document.querySelectorAll("#fmtRow .chip").forEach(c=>c.setAttribute("aria-pressed",c.dataset.fmt===v)); $("fmtNote").textContent=FMT_NOTES[v]; }
+document.querySelectorAll("#fmtRow .chip").forEach(c=>c.onclick=()=>setFmt(c.dataset.fmt)); setFmt("script");
+
+/* ---------- Google Drive ---------- */
+let gClientId="", gToken=null, gTokenExp=0, gFolderId=null;
+const DRIVE_SCOPE="https://www.googleapis.com/auth/drive.file", FOLDER_NAME="Thirakkatha Scripts";
+const hostedOk=()=>location.protocol==="https:"||location.hostname==="localhost"||location.hostname==="127.0.0.1";
+function updateDriveUI(){
+  if(NATIVE){ $("driveSetup").hidden=true; $("driveDisconnect").hidden=true; $("openDrive").hidden=true;
+    $("driveStatus").textContent="Tap Save to Google Drive, then open the ☰ menu in the save screen and choose Drive. To open a script from Drive, use Open script file and pick Drive the same way."; return; }
+  const on=!!gClientId;
+  $("driveSetup").hidden=on; $("driveDisconnect").hidden=!on; $("openDrive").hidden=!on;
+  $("driveStatus").textContent=on
+    ?(gToken&&Date.now()<gTokenExp?"Connected. Scripts save into the “"+FOLDER_NAME+"” folder in your Drive.":"Ready. You'll be asked to sign in to Google the first time you save or open.")
+    :"Not connected. Save to Google Drive uses your phone's share sheet. To save straight into a Drive folder, paste your Google Client ID below.";
+}
+function loadGis(){ return new Promise((res,rej)=>{
+  if(window.google&&google.accounts&&google.accounts.oauth2) return res();
+  const s=el("script"); s.src="https://accounts.google.com/gsi/client"; s.onload=()=>res(); s.onerror=()=>rej(new Error("Couldn't load Google sign-in")); document.head.appendChild(s); }); }
+async function getToken(){
+  if(gToken&&Date.now()<gTokenExp-60000) return gToken;
+  if(!hostedOk()) throw new Error("Google sign-in needs the app on a website (https). Open it from your hosted link.");
+  await loadGis();
+  return new Promise((res,rej)=>{
+    const tc=google.accounts.oauth2.initTokenClient({client_id:gClientId,scope:DRIVE_SCOPE,
+      callback:r=>{ if(r.error) return rej(new Error("Google sign-in was cancelled"));
+        gToken=r.access_token; gTokenExp=Date.now()+(r.expires_in||3600)*1000; updateDriveUI(); res(gToken); },
+      error_callback:e=>rej(new Error(e.type==="popup_closed"?"Google sign-in was closed":"Google sign-in failed. Check your Client ID and authorized origin."))});
+    tc.requestAccessToken({prompt:gToken?"":"consent"});
+  });
+}
+async function gfetch(url,opt={}){
+  const t=await getToken();
+  const r=await fetch(url,{...opt,headers:{...(opt.headers||{}),Authorization:"Bearer "+t}});
+  if(r.status===401){ gToken=null; throw new Error("Google sign-in expired. Try again."); }
+  return r;
+}
+async function ensureFolder(){
+  if(gFolderId) return gFolderId;
+  const q=encodeURIComponent("name='"+FOLDER_NAME+"' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  const r=await (await gfetch("https://www.googleapis.com/drive/v3/files?q="+q+"&fields=files(id)")).json();
+  if(r.files&&r.files.length) return gFolderId=r.files[0].id;
+  const c=await (await gfetch("https://www.googleapis.com/drive/v3/files",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({name:FOLDER_NAME,mimeType:"application/vnd.google-apps.folder"})})).json();
+  if(!c.id) throw new Error("Couldn't create the Drive folder");
+  return gFolderId=c.id;
+}
+function multipart(meta,type,data){ const b="thk"+uid();
+  return {boundary:b,body:"--"+b+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify(meta)+"\r\n--"+b+"\r\nContent-Type: "+type+"; charset=UTF-8\r\n\r\n"+data+"\r\n--"+b+"--"}; }
+async function driveUpload(){
+  const f=buildFile(), ids=script.driveIds||(script.driveIds={}), asGDoc=fmt==="doc";
+  const name=asGDoc?f.name.replace(/\.doc$/,""):f.name, type=asGDoc?"text/html":(fmt==="script"?"application/json":"text/plain");
+  const data=asGDoc?asDoc():f.data.replace(/^\ufeff/,"");
+  const send=async id=>{
+    const meta=id?{name}:{name,parents:[await ensureFolder()],...(asGDoc?{mimeType:"application/vnd.google-apps.document"}:{})};
+    const mp=multipart(meta,type,data);
+    return gfetch(id?"https://www.googleapis.com/upload/drive/v3/files/"+id+"?uploadType=multipart&fields=id,name":"https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name",
+      {method:id?"PATCH":"POST",headers:{"Content-Type":"multipart/related; boundary="+mp.boundary},body:mp.body});
+  };
+  let r=await send(ids[fmt]);
+  if(ids[fmt]&&(r.status===404||r.status===403)){ delete ids[fmt]; r=await send(null); }
+  if(!r.ok) throw new Error("Drive didn't accept the file ("+r.status+")");
+  const j=await r.json(); ids[fmt]=j.id; save(); return j.name;
+}
+$("openDrive").onclick=async()=>{
+  const box=$("driveList"); box.innerHTML='<p class="note">Loading your scripts from Drive…</p>';
+  try{
+    const q=encodeURIComponent("name contains '.mlscript' and trashed=false");
+    const r=await (await gfetch("https://www.googleapis.com/drive/v3/files?q="+q+"&orderBy=modifiedTime desc&pageSize=30&fields=files(id,name,modifiedTime)")).json();
+    const files=r.files||[];
+    if(!files.length){ box.innerHTML='<p class="note">No script files in Drive yet. Save one as “Script file” first.</p>'; return; }
+    box.innerHTML="";
+    files.forEach(fl=>{ const b=el("button");
+      b.innerHTML=esc(fl.name.replace(/\.mlscript$/,""))+"<small>Edited "+new Date(fl.modifiedTime).toLocaleString()+"</small>";
+      b.onclick=async()=>{ try{
+          const res=await gfetch("https://www.googleapis.com/drive/v3/files/"+fl.id+"?alt=media"); if(!res.ok) throw 0;
+          const d=JSON.parse(await res.text()); await flush(); const n=loadScriptData(d,fl.name); n.driveIds={script:fl.id}; save(); box.innerHTML="";
+        }catch(e){ toast("Couldn't open "+fl.name); } };
+      box.appendChild(b); });
+  }catch(e){ box.innerHTML=""; toast(e.message); }
+};
+$("clientIdSave").onclick=async()=>{
+  const v=$("clientIdInp").value.trim();
+  if(!/\.apps\.googleusercontent\.com$/.test(v)){ toast("That doesn't look like a Client ID. It ends in .apps.googleusercontent.com"); return; }
+  gClientId=settings.gclient=v; saveSettings(); updateDriveUI();
+  try{ await getToken(); toast("Google Drive connected"); }catch(e){ toast(e.message); }
+};
+$("driveDisconnect").onclick=()=>{
+  try{ if(gToken&&window.google) google.accounts.oauth2.revoke(gToken,()=>{}); }catch(e){}
+  gToken=null; gFolderId=null; gClientId=settings.gclient=""; saveSettings(); updateDriveUI(); toast("Google Drive disconnected");
+};
+async function shareToDrive(){
+  const f=buildFile();
+  try{ const file=new File([f.data],f.name,{type:f.type==="application/json"?"text/plain":f.type});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:f.name}); closeSheets(); toast("Pick Drive in the share list to save there"); return; }
+  }catch(e){ if(e.name==="AbortError") return; }
+  try{ download(f); }catch(e){}
+  window.open("https://drive.google.com/drive/my-drive","_blank");
+  closeSheets(); toast("File saved. In Drive, tap New → File upload and choose "+f.name);
+}
+$("saveDrive").onclick=async()=>{
+  if(!script.blocks.length){ toast("Write something first, then save"); return; }
+  if(NATIVE){ closeSheets(); download(buildFile()); return; }
+  if(!gClientId){ shareToDrive(); return; }
+  const btn=$("saveDrive"), lab=btn.querySelector("span"); btn.disabled=true; lab.textContent="Saving to Drive…";
+  try{ const n=await driveUpload(); closeSheets(); toast("Saved “"+n+"” to Google Drive"); }
+  catch(e){ toast(e.message||"Couldn't save to Drive"); }
+  finally{ btn.disabled=false; lab.textContent="Save to Google Drive"; }
+};
+
+/* ---------- Sheets, drawer, toast, shortcuts ---------- */
+function closeSheets(){ document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open")); }
+const openSheet=id=>{ closeSheets(); $(id).classList.add("open"); };
+document.querySelectorAll(".sheet").forEach(s=>s.addEventListener("click",e=>{ if(e.target===s||e.target.hasAttribute("data-close")) closeSheets(); }));
+$("menuBtn").onclick=()=>openSheet("menuSheet");
+$("saveBtn").onclick=()=>openSheet("saveSheet");
+$("helpBtn").onclick=()=>openSheet("helpSheet");
+$("detailsBtn").onclick=()=>openSheet("detailsSheet");
+$("aiBtn").onclick=openAi;
+const closeSide=()=>$("app").classList.remove("sideopen");
+$("sideBtn").onclick=()=>$("app").classList.toggle("sideopen");
+$("scrim").onclick=closeSide;
+let toastT;
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),3200); }
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){ closeSheets(); closeSide(); return; }
+  if(!(e.ctrlKey||e.metaKey)) return;
+  const k=e.key.toLowerCase(), a=document.activeElement, typing=a&&(a.isContentEditable||((a.tagName==="TEXTAREA"||a.tagName==="INPUT")&&a.value));
+  if(k==="s"){ e.preventDefault(); openSheet("saveSheet"); }
+  else if(k==="f"){ e.preventDefault(); openFind(); }
+  else if(k==="z"&&!typing){ e.preventDefault(); e.shiftKey?redo():undo(); }
+  else if(k==="y"&&!typing){ e.preventDefault(); redo(); }
+  else if(/^[1-6]$/.test(k)){ e.preventDefault(); curType=TYPES[+k-1][0]; renderChips(); updateComposer(); }
+});
+window.addEventListener("beforeunload",()=>{ flush(); });
+window.__thkFlush=()=>{ flush(); };
+window.__thkBack=()=>{                      // Android back button: close whatever is open first
+  if(document.querySelector(".sheet.open")){ closeSheets(); return true; }
+  if($("app").classList.contains("sideopen")){ closeSide(); return true; }
+  if(!$("findBar").hidden){ $("findClose").click(); return true; }
+  if(selId){ document.activeElement&&document.activeElement.blur(); clearSel(); return true; }
+  return false;
+};
+
+const KEYS=[["A","ആ"],["I","ഈ"],["U","ഊ"],["E","ഏ"],["O","ഓ"],["T","ട"],["D","ഡ"],["N","ണ"],["L","ള"],["R","റ"],["S","ഷ"],["Th","ഠ"],["Dh","ഢ"],["zh","ഴ"],["ksh","ക്ഷ"],["~","്"]];
+$("keyGrid").innerHTML=KEYS.map(([k,v])=>"<span><b>"+k+"</b>"+v+"</span>").join("");
+
+/* ---------- Installable app ---------- */
+if(NATIVE){ $("aiTog").hidden=true; $("aiBtn").hidden=true; }
+if(!NATIVE && "serviceWorker" in navigator && hostedOk()) window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+let installEvt=null;
+const standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); installEvt=e; $("installBtn").hidden=false; });
+if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!standalone&&location.protocol==="https:") $("installBtn").hidden=false;
+$("installBtn").onclick=async()=>{
+  closeSheets();
+  if(installEvt){ installEvt.prompt(); const r=await installEvt.userChoice; installEvt=null; $("installBtn").hidden=true; if(r.outcome==="accepted") toast("Thirakkatha is installed"); }
+  else toast("In Safari, tap Share, then Add to Home Screen");
+};
+window.addEventListener("appinstalled",()=>{ $("installBtn").hidden=true; });
+
+load();
+</script>
+</body>
+</html>
